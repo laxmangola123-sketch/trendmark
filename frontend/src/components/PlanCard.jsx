@@ -1,8 +1,16 @@
 import React from "react";
 
-export default function PlanCard({ plan, onSelect }) {
+export default function PlanCard({
+  plan,
+}) {
+
+  const choosePlan = () => {
+    window.location.href = "https://penmarksolutions.net/plan.php";
+  };
+
   return (
     <div className="card-tactical rounded-xl p-6 border border-white/10">
+
       <h3 className="font-heading font-bold text-xl mb-2">
         {plan?.name || "Plan"}
       </h3>
@@ -20,11 +28,12 @@ export default function PlanCard({ plan, onSelect }) {
       </div>
 
       <button
-        onClick={() => onSelect && onSelect(plan)}
+        onClick={choosePlan}
         className="btn-primary w-full py-2 rounded-md font-semibold"
       >
         Choose Plan
       </button>
+
     </div>
   );
 }

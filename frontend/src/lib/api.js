@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api",
+  baseURL: process.env.REACT_APP_API_URL || "http://127.0.0.1:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,7 +12,7 @@ export function getToken() {
   return localStorage.getItem("token");
 }
 
-// Automatically attach token
+// Attach token automatically
 api.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -26,8 +26,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Save auth
-export function saveAuth(token, user) {
+// ✅ FIXED
+export function saveAuth(auth) {
+  if (!auth) return;
+
+  const token = auth.token;
+  const user = auth.user;
+
   if (token) {
     localStorage.setItem("token", token);
   }
@@ -37,20 +42,18 @@ export function saveAuth(token, user) {
   }
 }
 
-// Get stored user
 export function getStoredUser() {
-  const user = localStorage.getItem("user");
+  const raw = localStorage.getItem("user");
 
-  if (!user) return null;
+  if (!raw) return null;
 
   try {
-    return JSON.parse(user);
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
-// Clear auth
 export function clearAuth() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");

@@ -1,8 +1,21 @@
 import React from "react";
 
-export default function EmailsTable({ emails = [] }) {
+export default function EmailsTable({ emails }) {
+
+  const list =
+    Array.isArray(emails)
+      ? emails
+      : Array.isArray(emails?.emails)
+        ? emails.emails
+        : Array.isArray(emails?.data)
+          ? emails.data
+          : [];
+
   return (
-    <div className="card-tactical rounded-xl overflow-hidden" data-testid="admin-emails-table">
+    <div
+      className="card-tactical rounded-xl overflow-hidden"
+      data-testid="admin-emails-table"
+    >
       <table className="w-full text-sm">
         <thead className="bg-black/40 text-white/60">
           <tr>
@@ -12,22 +25,52 @@ export default function EmailsTable({ emails = [] }) {
             <th className="text-left px-4 py-3 tag-uppercase">Status</th>
           </tr>
         </thead>
+
         <tbody>
-          {emails.map((e) => (
-            <tr key={e.id} className="border-t border-white/5">
-              <td className="px-4 py-3">{e.to_email}</td>
-              <td className="px-4 py-3">{e.subject}</td>
-              <td className="px-4 py-3 text-white/50 text-xs">{e.sent_at?.slice(0, 16).replace("T", " ")}</td>
-              <td className="px-4 py-3 tag-uppercase text-laser">{e.status}</td>
+          {list.map((e, index) => (
+            <tr
+              key={e.id || index}
+              className="border-t border-white/5"
+            >
+              <td className="px-4 py-3">
+                {e.to_email || e.email || "-"}
+              </td>
+
+              <td className="px-4 py-3">
+                {e.subject || "-"}
+              </td>
+
+              <td className="px-4 py-3 text-white/50 text-xs">
+                {e.sent_at
+                  ? new Date(e.sent_at).toLocaleString()
+                  : "-"}
+              </td>
+
+              <td className="px-4 py-3">
+                <span className="tag-uppercase text-laser">
+                  {e.status || "sent"}
+                </span>
+              </td>
             </tr>
           ))}
-          {emails.length === 0 && (
-            <tr><td colSpan={4} className="px-4 py-6 text-center text-white/50">No emails sent yet.</td></tr>
+
+          {list.length === 0 && (
+            <tr>
+              <td
+                colSpan={4}
+                className="px-4 py-6 text-center text-white/50"
+              >
+                No emails found.
+              </td>
+            </tr>
           )}
         </tbody>
       </table>
+
       <div className="p-4 text-xs text-white/40 border-t border-white/5">
-        Note: emails are currently <b className="text-amber">MOCKED</b> — logged to DB &amp; backend logs. Connect SendGrid/Resend to send real messages.
+        Note: emails are currently{" "}
+        <b className="text-amber">MOCKED</b> — logged to DB &
+        backend logs.
       </div>
     </div>
   );

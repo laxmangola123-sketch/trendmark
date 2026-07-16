@@ -6,18 +6,30 @@ import { usePlans } from "../lib/usePlans";
 import { initiatePurchase } from "../lib/purchase";
 import PlanCard from "./PlanCard";
 
-export default function MembershipModal({ open, onClose, onPurchased, allowSkip = true }) {
-  const plans = usePlans(open);
+export default function MembershipModal({
+  open,
+  onClose,
+  onPurchased,
+  allowSkip = true,
+}) {
+  // ✅ Correct use of hook
+  const { plans, loading, error } = usePlans();
+
   const [loadingId, setLoadingId] = useState(null);
 
   const purchase = async (planId) => {
     setLoadingId(planId);
+
     try {
       const data = await initiatePurchase(planId);
+
       onPurchased?.(data);
       onClose?.();
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "Could not start payment. Please try again.");
+      toast.error(
+        e?.response?.data?.detail ||
+        "Could not start payment. Please try again."
+      );
     } finally {
       setLoadingId(null);
     }
@@ -28,35 +40,93 @@ export default function MembershipModal({ open, onClose, onPurchased, allowSkip 
       {open && (
         <motion.div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           data-testid="membership-modal"
         >
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => allowSkip && onClose?.()} />
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            onClick={() => allowSkip && onClose?.()}
+          />
+
           <motion.div
-            initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="relative z-10 w-full max-w-6xl bg-panel border border-white/10 rounded-xl p-6 sm:p-10 overflow-y-auto max-h-[92vh]"
           >
             <div className="flex items-start justify-between mb-6">
               <div>
-                <div className="tag-uppercase text-volt mb-2">Unlock full access</div>
-                <h2 className="font-heading font-black text-3xl sm:text-4xl tracking-tight">Pick your membership</h2>
-                <p className="text-white/60 mt-2 max-w-lg">Each dollar becomes 1 credit. 1 credit is consumed per day. Each plan includes a private WhatsApp group.</p>
+                <div className="tag-uppercase text-volt mb-2">
+                  Unlock full access
+                </div>
+
+                <h2 className="font-heading font-black text-3xl sm:text-4xl tracking-tight">
+                  Pick your membership
+                </h2>
+
+                <p className="text-white/60 mt-2 max-w-lg">
+                  Each dollar becomes 1 credit. 1 credit is consumed per day.
+                  Each plan includes a private WhatsApp group.
+                </p>
               </div>
+
               {allowSkip && (
-                <button data-testid="membership-close-btn" className="text-white/50 hover:text-white transition-colors p-2" onClick={onClose}><X size={22}/></button>
+                <button
+                  data-testid="membership-close-btn"
+                  className="text-white/50 hover:text-white transition-colors p-2"
+                  onClick={onClose}
+                >
+                  <X size={22} />
+                </button>
               )}
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {plans.map((p) => (
-                <PlanCard key={p.id} plan={p} loading={loadingId === p.id} onBuy={purchase} />
-              ))}
+
+              {loading && (
+                <div className="col-span-full text-center text-white py-10">
+                  Loading membership plans...
+                </div>
+              )}
+
+              {error && (
+                <div className="col-span-full text-center text-red-500 py-10">
+                  Failed to load membership plans.
+                </div>
+              )}
+
+              {!loading &&
+                !error &&
+                Array.isArray(plans) &&
+                plans.length > 0 &&
+                plans.map((p) => (
+                  <PlanCard
+                    key={p.id}
+                    plan={p}
+                    loading={loadingId === p.id}
+                    onBuy={purchase}
+                  />
+                ))}
+
+              {!loading &&
+                !error &&
+                Array.isArray(plans) &&
+                plans.length === 0 && (
+                  <div className="col-span-full text-center text-white py-10">
+                    No membership plans available.
+                  </div>
+                )}
             </div>
 
             {allowSkip && (
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10 pt-6">
-                <div className="text-sm text-white/60">Not ready? You can try the platform free for 7 days.</div>
+                <div className="text-sm text-white/60">
+                  Not ready? You can try the platform free for 7 days.
+                </div>
+
                 <button
                   data-testid="skip-membership-btn"
                   onClick={onClose}

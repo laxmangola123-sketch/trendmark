@@ -1,28 +1,49 @@
 import api from "./api";
 
+/**
+ * Start membership purchase
+ */
 export async function initiatePurchase(planId) {
   try {
-    const response = await api.post("/purchase", {
-      planId,
+    const { data } = await api.post("/membership/purchase", {
+      plan_id: planId,
     });
 
-    return response.data;
-
+    return data;
   } catch (error) {
-    console.error("Purchase error:", error);
-    throw error;
+    console.error("Purchase Error:", error);
+
+    if (error.response) {
+      throw new Error(
+        error.response.data?.detail ||
+        error.response.data?.message ||
+        "Purchase failed."
+      );
+    }
+
+    throw new Error("Unable to connect to the server.");
   }
 }
 
-
+/**
+ * Get user's purchase history
+ */
 export async function getPurchases() {
   try {
-    const response = await api.get("/purchase");
+    const { data } = await api.get("/membership/purchases");
 
-    return response.data;
-
+    return data;
   } catch (error) {
-    console.error("Get purchase error:", error);
-    throw error;
+    console.error("Purchase History Error:", error);
+
+    if (error.response) {
+      throw new Error(
+        error.response.data?.detail ||
+        error.response.data?.message ||
+        "Failed to load purchase history."
+      );
+    }
+
+    throw new Error("Unable to connect to the server.");
   }
 }
