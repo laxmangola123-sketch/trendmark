@@ -1,0 +1,175 @@
+{
+  "theme": "dark",
+  "typography": {
+    "fonts": {
+      "heading": "Unbounded, sans-serif",
+      "body": "IBM Plex Sans, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-black",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-semibold",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed",
+      "small_labels": "text-xs tracking-[0.2em] uppercase font-bold"
+    },
+    "rules": [
+      "DO NOT use Inter, Roboto, Open Sans, or Lato for headings.",
+      "Headlines > 32px MUST use tracking-tight or tracking-tighter.",
+      "Overlines/Labels MUST be uppercase + tiny + wide spacing (tracking-[0.2em])."
+    ]
+  },
+  "colors": {
+    "archetype": "The Performance Pro (Elite Trading & Precision)",
+    "palette": {
+      "background_primary": "#0A0A0A",
+      "background_secondary": "#121212",
+      "background_card": "#1E1E1E",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#A1A1AA",
+      "accent_primary": "#007AFF",
+      "accent_success": "#22C55E",
+      "accent_danger": "#FF3B30",
+      "accent_warning": "#F59E0B",
+      "border": "rgba(255, 255, 255, 0.1)"
+    },
+    "rules": [
+      "NEVER use pure #000000; base is Deep Obsidian (#0A0A0A).",
+      "Use Electric Blaze (#FF3B30) for down trends and warnings.",
+      "Use Volt Blue (#007AFF) for primary actions.",
+      "Use Laser Green (#22C55E) for up trends and success states.",
+      "Ensure text meets APCA/WCAG standards. Do NOT use completely transparent backgrounds behind text.",
+      "Hover state color must be a lighter hue of the active state color, and ALWAYS explicitly set text color on hover."
+    ]
+  },
+  "visual_enhancers": {
+    "surfaces": [
+      {
+        "type": "Glassmorphism (Crystal)",
+        "usage": "Sticky Headers, Floating Navs, Modal Overlays",
+        "classes": "backdrop-blur-xl bg-black/60 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+      },
+      {
+        "type": "Grid Borders (Technical Look)",
+        "usage": "Data-heavy Dashboards, Admin Panels, Feature Sections",
+        "classes": "border-collapse border-r border-b border-white/10"
+      },
+      {
+        "type": "The Tracing Beam",
+        "usage": "Pro Membership Pricing Card highlight",
+        "concept": "A glowing gradient line that travels around the container edge using framer-motion or a moving background gradient."
+      }
+    ],
+    "textures": [
+      "Subtle noise overlay (opacity 0.03) to break the digital flatness on the landing page."
+    ],
+    "shadows": [
+      "Use sharp 1px borders instead of soft shadows for a 'Tactical Minimalism' look."
+    ]
+  },
+  "components": {
+    "buttons": "Pill-shaped or slightly rounded (rounded-md) with sharp inner contrasts. Primary: bg-[#007AFF] text-white hover:bg-[#3395FF].",
+    "cards": "Flat background (#1E1E1E), 1px subtle border (border-white/10), no shadow. On hover: -translate-y-1, border color darkens/lightens slightly.",
+    "pricing_cards": "3-column layout. Use dark gray backgrounds (#1E1E1E). Highlight 'Pro/Elite' plan with vibrant Volt Blue border or The Tracing Beam effect. Price must be high-contrast white text.",
+    "forms": "Use Shadcn Input, Select, Form. Ensure 1px solid stroke borders for a tactical look. Focus rings must be Volt Blue (ring-[#007AFF]).",
+    "navigation": "Sticky header (z-50) using Glassmorphism. MUST include visible links on desktop (no hamburger menu hiding links on desktop).",
+    "toasts": "Use Sonner component for notifications (e.g., signup success, email sent, trial started)."
+  },
+  "layouts_and_grids": {
+    "dashboard": {
+      "strategy": "High Density Grid",
+      "grid_classes": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4",
+      "span_logic": [
+        "Summary widgets (Remaining Credits, Trial Days): col-span-1",
+        "Main Chart (Revenue/Trading Data): col-span-2 row-span-2 or col-span-3",
+        "List (User Feed): col-span-1 row-span-2"
+      ],
+      "rules": "Every pixel must be utilized. Use h-full on children to ensure they stretch to match their neighbors."
+    },
+    "marketing_landing": {
+      "strategy": "The Tetris Grid",
+      "grid_classes": "grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8 lg:gap-12",
+      "span_logic": [
+        "Hero: col-span-full md:col-span-8 row-span-2",
+        "Square: col-span-4 row-span-1"
+      ]
+    },
+    "spacing": "Use Tailwind scale generously (p-6, p-8, p-12). Containers with borders must have internal padding (p-6 or p-8) to prevent text collision."
+  },
+  "motion_and_interactions": {
+    "requirements": [
+      "Hover states on all interactive elements.",
+      "Entrance animations (staggered for lists) using framer-motion.",
+      "Micro-animations for feedback (e.g., credit reduction counter)."
+    ],
+    "rules": [
+      "DO NOT use `transition: all`.",
+      "Use specific transitions: `transition: transform 0.2s ease, opacity 0.2s ease`."
+    ]
+  },
+  "accessibility": {
+    "rules": [
+      "Minimum 4.5:1 contrast ratio for normal text, 3:1 for large text.",
+      "Explicitly set text color on hover (e.g., hover:bg-slate-900 hover:text-white).",
+      "Focus states must have HIGHER contrast.",
+      "Respect prefers-reduced-motion."
+    ]
+  },
+  "media_and_images": {
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGZpbmFuY2UlMjBjaGFydCUyMGRhcmt8ZW58MHx8fHwxNzgzNzMyMTc4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract candlestick stock chart on dark screen",
+        "category": "Hero Section Background / Dashboard Header"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1745270917331-787c80129680?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMGZpbmFuY2UlMjBjaGFydCUyMGRhcmt8ZW58MHx8fHwxNzgzNzMyMTc4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Stock market graph fluctuating trends",
+        "category": "Feature Section Image / Analytics representation"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1782712754887-93fe625197a8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwzfHxjb21wYW55JTIwbG9nbyUyMHR5cG9ncmFwaHl8ZW58MHx8fHwxNzgzNzMyMTc4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Modern typography logo on light surface",
+        "category": "Partner/Sponsor Logos"
+      }
+    ],
+    "rules": [
+      "DO NOT use placeholder URLs (via.placeholder.com).",
+      "Images MUST NOT exceed 80vh on mobile devices."
+    ]
+  },
+  "libraries_and_tools": {
+    "icons": "lucide-react (already installed) or @phosphor-icons/react for dense dashboards.",
+    "charts": "recharts (for 2D data-dense admin panel widgets).",
+    "animations": "framer-motion for transitions and modals."
+  },
+  "testing": {
+    "rules": [
+      "All interactive and key informational elements MUST include a `data-testid` attribute (e.g., data-testid='login-submit-button')."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Prioritize reading Shadcn UI component patterns. Use Shadcn components for forms, select, dialogs, etc., but strip Vercel look and apply tactical dark theme borders/colors.",
+    "Implement a post-signup Membership Modal using Shadcn Dialog. It must show plans and a 'Skip to 7-Day Trial' button.",
+    "Create an Admin Panel (accessible via separate route) showing users, membership status, credits, trial days left.",
+    "The Dashboard must show remaining credits and trial days clearly using col-span-1 summary widgets.",
+    "Apply Deep Obsidian (#0A0A0A) as the main body background, not pure black.",
+    "Do not use markdown blocks when writing the JSON configuration, follow raw text.",
+    "Ensure 'TrendTracker Pro' branding is visible in the Navbar."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic outputs. Avoid the 'AI slop' aesthetic. Make creative, distinctive frontends.",
+    "DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts. Use asymmetrical or precise grid layouts.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) where instructed.",
+    "You MUST NOT apply universal transition (transition: all).",
+    "You MUST NOT center align the app container (.App { text-align: center; }).",
+    "NEVER use AI assistant Emoji characters (🤖🧠💭) for icons.",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Use `sonner` for toasts.",
+    "DO NOT use HTML-based components for advanced interactions (use Shadcn instead)."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "summary": "First-finish smoke test for TrendTracker Pro membership app. All 13 targeted backend endpoints and 8 UI flows verified against public preview URL. Backend health, auth (signup/login/me), plans, membership purchase (with mocked email log), and admin (users/stats/emails/RBAC) all return correct status codes and payloads. Frontend landing, signup->auto membership modal, skip -> trial dashboard (7 days, 0 credits), duplicate-signup error, admin login redirecting to /admin, and admin panel data rendering all work correctly. Email sending is MOCKED (stored in db.email_logs) as intended.",
+  "tested_scope": ["backend", "frontend", "auth", "integration"],
+  "passed": [
+    "GET /api/health -> 200 {status:ok}",
+    "POST /api/auth/signup -> 200 with token + user (trial_days_left=7, credits=0, has_membership=false)",
+    "Duplicate signup -> 409 'An account with this email already exists. Please log in instead.'",
+    "POST /api/auth/login wrong pw -> 401 'Invalid email or password'",
+    "POST /api/auth/login admin@trendtracker.com/Admin@1234 -> 200 token",
+    "GET /api/auth/me -> 200 with correct trial_days_left/credits",
+    "GET /api/plans -> 200 with basic($10/10), pro($30/30, popular:true), elite($90/90)",
+    "POST /api/membership/purchase plan_id=pro -> 200, credits=30, has_membership=true, membership_plan=pro, membership_amount=30, records payment + email_log (MOCKED)",
+    "POST /api/membership/purchase invalid plan_id -> 400 'Invalid plan id'",
+    "GET /api/admin/users non-admin -> 403 'Admin only'",
+    "GET /api/admin/users admin -> 200 with users list incl is_admin, credits, has_membership, membership_plan, trial_days_left, membership_amount, created_at",
+    "GET /api/admin/stats -> 200 with total_users=3, active_members=2, trial_users=1, total_revenue=60, payments_count=2, recent_payments list",
+    "GET /api/admin/emails -> 200 with logged emails (to_email, subject, sent_at, status=sent_mock)",
+    "Frontend landing renders 'TrendTracker Pro' brand, hero, 'Start free trial' and 'View membership plans' CTAs",
+    "Signup flow redirects to /dashboard and auto-opens membership-modal with skip-membership-btn",
+    "Skip button closes modal; dashboard shows Trial=7 days and Credits=0",
+    "Duplicate signup shows API error text in [data-testid=signup-error]",
+    "Admin login redirects to /admin; admin-users-table, admin-tab-payments, admin-tab-emails all present",
+    "Admin panel displays stats (Total users 3, Active 2, Trial 1, Revenue $60, Payments 2), users rows (admin + testuser + t1user), and Emails tab with sent_mock rows",
+    "Navbar shows Logout button when logged in (visible top-right in screenshot)"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": {
+    "mocked": ["Email sending on /api/membership/purchase writes to db.email_logs and logs to stdout — no real SMTP call. Confirmed visible in Admin > Emails sent tab with status=sent_mock."],
+    "not_tested_deeply": ["Membership 'Get Pro' button click flow inside modal (buy-plan-pro selector was not visible at instant snapshot due to plans lazy-fetch; backend purchase endpoint verified end-to-end via curl instead)", "Non-admin redirect from /admin -> /dashboard (protected route logic not manually reproduced in UI, backend 403 confirmed)"]
+  }
+}

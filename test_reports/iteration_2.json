@@ -1,0 +1,48 @@
+{
+  "summary": "Full-stack e2e review (backend + frontend) of TrendTracker Pro after major refactor. 18/18 pytest backend tests pass. All frontend flows verified via Playwright: landing sections, plans purchase (external URL open + toast), signup->membership modal, KYC PDF upload, admin panel with 7 stats + 6 tabs (Users/Payments/KYC/Plans/Stocks/Emails).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin panel", "issues": ["'Loading admin data...' text remains visible for a moment even after stat cards render — cosmetic only, harmless"]},
+      {"screen": "Plans admin (PlansAdmin)", "issues": ["Save buttons for each plan card use text 'Save changes' without a per-plan data-testid (e.g. 'save-plan-growth'). Works, but review request expected such a testid — consider adding for finer-grained UI tests."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Add data-testid='save-plan-<id>' on each Save button inside PlansAdmin.jsx for easier per-plan UI assertions.",
+    "(Optional) Suppress the 'Loading admin data...' text once stats have arrived, so it doesn't briefly overlap with the loaded stats."
+  ],
+  "critical_code_review_comments": [
+    "server.py is ~650 lines and now covers auth+plans+stocks+payments+KYC+admin. Consider splitting into routers/ modules (auth.py, admin.py, kyc.py) as it will keep growing.",
+    "Purchase flow correctly writes a pending payment and does NOT grant credits — matches new async spec.",
+    "MongoDB _id is properly stripped via strip_id() everywhere.",
+    "JWT secret is loaded from env; admin bootstrap is idempotent.",
+    "kyc_submit only accepts application/pdf — good. No size cap on the server side (frontend claims 10 MB); consider adding a server-side max size check.",
+    "admin_kyc_status accepts 'pending' as a valid status via query param — that could re-open an already-approved KYC. Not blocking but worth a check.",
+    "Admin toggle uses query param `active=false` on PATCH — works, but a JSON body would be more RESTful."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (new pytest suite, 18 tests)",
+    "/app/memory/test_credentials.md (updated to reflect admin@tredtracker.net and async purchase flow)"
+  ],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "100% of exercised flows"},
+  "test_credentials": "Admin: admin@tredtracker.net / admin@123. Test users created dynamically with TEST_ prefix via /api/auth/signup.",
+  "seed_data_creation": "Backend startup seeds: admin user, 4 plans (starter/growth/premium/ultimate), 8 stocks (AAPL/MSFT/NVDA/TSLA/AMZN/META/GOOGL/SPY). Tests create TEST_ prefixed users, a pending payment (approved during test), a KYC submission (approved), a temp plan and a temp stock (both deleted at end).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 18 pytest cases run against the public REACT_APP_BACKEND_URL — re-run with: pytest /app/backend/tests/backend_test.py -v. Purchase flow is async: expect POST /api/membership/purchase to return external_payment_url with status='pending', then PATCH /api/admin/payments/{id}/approve to grant credits. Frontend membership modal is data-testid='membership-modal' and auto-opens after signup redirect (/dashboard?welcome=1). Note: nav intentionally has NO Admin link — testing it should assert absence.",
+  "mocked_apis_verified": [
+    "Email log via db.email_logs — verified writes for payment_initiated, membership_confirmation, kyc_status, account_status.",
+    "External payment window.open('https://penmarksolutions.net/plan.php') — verified via patched window.open in Playwright."
+  ],
+  "rca of the issue": "N/A — no failing tests. All flows behave per spec."
+}
