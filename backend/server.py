@@ -379,6 +379,8 @@ async def purchase(body: PurchaseIn, user=Depends(get_current_user)):
     }
     await db.memberships.insert_one(payment)
 
+    
+
     # Email: purchase initiated
     subject = f"Payment initiated for {plan['name']} — TrendTracker Pro"
     body_text = (
@@ -397,6 +399,109 @@ async def purchase(body: PurchaseIn, user=Depends(get_current_user)):
         "payment_id": payment["id"],
         "external_payment_url": EXTERNAL_PAYMENT_URL,
         "message": "Complete your payment on the secure page. Your membership will be activated once approved.",
+    }
+# ---------- Payment Success Callback ----------
+class PaymentSuccessIn(BaseModel):
+    payment_id: str
+
+
+@app.post("/api/membership/payment-success")
+async def payment_success(body: PaymentSuccessIn):
+
+    # Find payment
+    payment = await db.memberships.find_one(
+        {"id": body.payment_id}
+    )
+
+    if not payment:
+        raise HTTPException(
+            status_code=404,
+            detail="Payment not found"
+        )
+
+    # Already activated
+    if payment.get("status") == "approved":
+        return {
+            "ok": True,
+            "message": "Membership already activated"
+        }
+
+
+    # Find user
+    user = await db.users.find_one(
+        {"id": payment["user_id"]}
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+
+    # Find plan
+    plan = await db.plans.find_one(
+        {"id": payment["plan_id"]}
+    )
+
+    if not plan:
+        raise HTTPException(
+            status_code=404,
+            detail="Plan not found"
+        )
+
+
+    now = now_utc()
+
+
+    # Activate membership
+    await _apply_membership_to_user(
+        user,
+        strip_id(plan),
+        now
+    )
+
+
+    # Update payment status
+    await db.memberships.update_one(
+        {"id": body.payment_id},
+        {
+            "$set":{
+                "status":"approved",
+                "approved_at":iso(now),
+                "approved_by":"payment_gateway"
+            }
+        }
+    )
+
+
+    # Confirmation email log
+    await _send_email(
+        user,
+        f"Welcome to TrendTracker Pro {plan['name']}!",
+        f"""
+Hi {user.get('name','User')},
+
+Your payment is successful.
+
+Plan:
+{plan['name']}
+
+Credits Added:
+{plan['credits']}
+
+Your membership is now active.
+
+Thank you,
+TrendTracker Pro
+""",
+        "membership_confirmation"
+    )
+
+
+    return {
+        "ok":True,
+        "message":"Payment successful. Membership activated."
     }
 
 # ---------- KYC ----------
