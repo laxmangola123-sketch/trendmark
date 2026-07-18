@@ -14,24 +14,34 @@ import Watchlist from "./pages/Watchlist";
 import Kyc from "./pages/Kyc";
 import Admin from "./pages/Admin";
 
+import DashboardLayout from "./components/DashboardLayout";
+
 function App() {
     return (
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-
+                    {/* Public Routes */}
                     <Route path="/" element={<Landing />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
-                    <Route path="/plans" element={<Plans />} />
+                    <Route path="/admin" element={<Admin />} />
 
-                    <Route path="/dashboard" element={<Dashboard />} />
+                    {/* Dashboard Layout */}
+                    <Route element={<DashboardLayout />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/dashboard/markets" element={<Markets />} />
+                        <Route path="/dashboard/portfolio" element={<Portfolio />} />
+                        <Route path="/dashboard/watchlist" element={<Watchlist />} />
+                        <Route path="/dashboard/plans" element={<Plans />} />
+                        <Route path="/kyc" element={<Kyc />} />
+                    </Route>
+
+                    {/* Optional redirects / old URLs */}
+                    <Route path="/plans" element={<Plans />} />
                     <Route path="/markets" element={<Markets />} />
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/watchlist" element={<Watchlist />} />
-                    <Route path="/kyc" element={<Kyc />} />
-                    <Route path="/admin" element={<Admin />} />
-
                 </Routes>
             </BrowserRouter>
         </AuthProvider>

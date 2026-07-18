@@ -33,6 +33,36 @@ const FAQ = [
 export default function Landing() {
   return (
     <main className="relative">
+
+      {/* TOP NAVBAR */}
+      <nav className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center relative z-50">
+
+        <Link to="/" className="font-heading font-black text-2xl">
+          TrendTracker
+          <span className="text-volt"> Pro</span>
+        </Link>
+
+
+        <div className="flex gap-3">
+
+          <Link
+            to="/login"
+            className="px-5 py-2 rounded-md border border-white/20 text-white hover:bg-white/10"
+          >
+            Login
+          </Link>
+
+
+          <Link
+            to="/signup"
+            className="px-5 py-2 rounded-md bg-volt text-black font-semibold"
+          >
+            Get Started
+          </Link>
+
+        </div>
+
+      </nav>
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 grid-lines opacity-40" />
@@ -51,7 +81,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-wrap gap-3 mt-8">
               <Link to="/signup" data-testid="hero-cta-signup" className="btn-primary px-6 py-3 rounded-md font-semibold text-sm flex items-center gap-2">
-                Start free trial <ArrowRight size={16}/>
+                Start free trial <ArrowRight size={16} />
               </Link>
               <Link to="/plans" data-testid="hero-cta-plans" className="btn-outline px-6 py-3 rounded-md font-semibold text-sm">
                 View membership plans
@@ -68,8 +98,8 @@ export default function Landing() {
             initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.6 }}
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10">
-              <img src={HERO} alt="Trading chart" className="w-full h-[420px] object-cover"/>
-              <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-transparent"/>
+              <img src={HERO} alt="Trading chart" className="w-full h-[420px] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                 <div>
                   <div className="tag-uppercase text-white/70">SPX · 1H</div>
@@ -97,7 +127,7 @@ export default function Landing() {
               className="card-tactical rounded-xl p-6"
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
             >
-              <f.icon className="text-volt mb-3" size={24}/>
+              <f.icon className="text-volt mb-3" size={24} />
               <h3 className="font-heading font-bold text-xl mb-2">{f.title}</h3>
               <p className="text-white/60 text-sm leading-relaxed">{f.desc}</p>
             </motion.div>
@@ -111,9 +141,9 @@ export default function Landing() {
         <h2 className="font-heading font-black text-3xl sm:text-4xl tracking-tighter mb-10">From signup to signals in 4 steps</h2>
         <div className="grid md:grid-cols-4 gap-6">
           {STEPS.map((s, i) => (
-            <div key={s.title} className="card-tactical rounded-xl p-6 relative" data-testid={`how-step-${i+1}`}>
-              <div className="tag-uppercase text-white/40 mb-3">Step {i+1}</div>
-              <s.icon className="text-volt mb-3" size={22}/>
+            <div key={s.title} className="card-tactical rounded-xl p-6 relative" data-testid={`how-step-${i + 1}`}>
+              <div className="tag-uppercase text-white/40 mb-3">Step {i + 1}</div>
+              <s.icon className="text-volt mb-3" size={22} />
               <h3 className="font-heading font-bold text-lg mb-2">{s.title}</h3>
               <p className="text-white/60 text-sm">{s.desc}</p>
             </div>
@@ -127,7 +157,7 @@ export default function Landing() {
         <h2 className="font-heading font-black text-3xl sm:text-4xl tracking-tighter mb-10">Built for traders who take this seriously.</h2>
         <div className="grid md:grid-cols-2 gap-6">
           {WHY.map((w) => (
-            <div key={w.title} className="card-tactical rounded-xl p-6" data-testid={`why-${w.title.toLowerCase().replace(/\s+/g,'-')}`}>
+            <div key={w.title} className="card-tactical rounded-xl p-6" data-testid={`why-${w.title.toLowerCase().replace(/\s+/g, '-')}`}>
               <h3 className="font-heading font-bold text-lg mb-2">{w.title}</h3>
               <p className="text-white/60 text-sm leading-relaxed">{w.desc}</p>
             </div>
