@@ -23,8 +23,14 @@ export default function Plans() {
     setLoadingId(id);
 
     try {
-      await initiatePurchase(id);
-      toast.success("Purchase request submitted successfully.");
+      const data = await initiatePurchase(id);
+
+      if (data?.external_payment_url) {
+        window.location.href =
+          `${data.external_payment_url}?payment_id=${data.payment_id}`;
+      } else {
+        toast.error("Payment URL not found.");
+      }
     } catch (e) {
       toast.error(
         e?.message ||

@@ -8,6 +8,8 @@ from jose import jwt, JWTError
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 import os, uuid, logging, pathlib, shutil
+import httpx
+import asyncio
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -26,6 +28,8 @@ EXTERNAL_PAYMENT_URL = os.environ["EXTERNAL_PAYMENT_URL"]
 SUPPORT_PHONE = os.environ["SUPPORT_PHONE"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 SUPPORT_ADDRESS = os.environ["SUPPORT_ADDRESS"]
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "")
+
 
 UPLOAD_ROOT = pathlib.Path(__file__).parent / "uploads"
 KYC_DIR = UPLOAD_ROOT / "kyc"
@@ -244,6 +248,7 @@ async def startup():
             doc["updated_at"] = iso(now_utc())
             await db.stocks.insert_one(doc)
         logger.info("Seeded default stocks")
+        
 
 def strip_id(d):
     d = dict(d)
@@ -321,8 +326,29 @@ async def get_plans():
 
 @app.get("/api/stocks")
 async def get_stocks():
+
+    if TWELVE_DATA_API_KEY:
+
+        try:
+            await refresh_market_cache()
+
+            docs = await db.live_stocks.find({}).to_list(100)
+
+            if docs:
+                return {
+                    "stocks": [strip_id(d) for d in docs],
+                    "source": "live"
+                }
+
+        except Exception as e:
+            logger.error(f"Live Market Error: {e}")
+
     docs = await db.stocks.find({}).to_list(100)
-    return {"stocks": [strip_id(d) for d in docs]}
+
+    return {
+        "stocks": [strip_id(d) for d in docs],
+        "source": "database"
+    }
 
 # ---------- Membership helpers ----------
 async def _find_plan(plan_id: str):
@@ -654,7 +680,7 @@ async def admin_reject_payment(pid: str, user=Depends(require_admin)):
     payment = await db.memberships.find_one({"id": pid})
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    await db.memberships.update_one({"id": pid}, {"$set": {"status": "rejected", "reviewed_at": iso(now_utc())}})
+    await db.memberships.update_one({"id": pid}, {"$set": {"status": "rejected", "reviewed_at": iso(now_utc()),             "reviewed_by": user["email"]}})
     return {"ok": True}
 
 # ---------- Admin: Emails ----------
@@ -758,11 +784,15 @@ async def admin_kyc_status(kid: str, status: str, notes: str = "", user=Depends(
 VALID_SECTIONS = {"portfolio", "markets", "analytics", "watchlist"}
 
 @app.get("/api/content/{section}")
-async def list_content(section: str, user=Depends(get_current_user)):
+async def list_content(section: str):
     if section not in VALID_SECTIONS:
         raise HTTPException(status_code=400, detail="Invalid section")
+
     docs = await db.content.find({"section": section}).sort("created_at", -1).to_list(200)
-    return {"items": [strip_id(d) for d in docs]}
+
+    return {
+        "items": [strip_id(d) for d in docs]
+    }
 
 @app.get("/api/admin/content")
 async def admin_list_content(user=Depends(require_admin)):
