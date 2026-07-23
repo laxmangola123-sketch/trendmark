@@ -6,10 +6,10 @@ import { ImageOff } from "lucide-react";
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 const META = {
-  portfolio: { title: "Portfolio",  subtitle: "Recommended holdings and long-term positions from our analysts." },
-  markets:   { title: "Markets",    subtitle: "Live sector snapshots, macro moves and index heat-maps." },
-  analytics: { title: "Analytics",  subtitle: "Deep-dive technical and fundamental research reports." },
-  watchlist: { title: "Watchlist",  subtitle: "Tickers we're actively monitoring for entries and exits." },
+  portfolio: { title: "Portfolio", subtitle: "Recommended holdings and long-term positions from our analysts." },
+  markets: { title: "Markets", subtitle: "Live sector snapshots, macro moves and index heat-maps." },
+  analytics: { title: "Analytics", subtitle: "Deep-dive technical and fundamental research reports." },
+  watchlist: { title: "Watchlist", subtitle: "Tickers we're actively monitoring for entries and exits." },
 };
 
 export default function ContentSection({ section }) {
@@ -21,7 +21,7 @@ export default function ContentSection({ section }) {
     let cancelled = false;
     api.get(`/api/content/${section}`)
       .then(({ data }) => { if (!cancelled) setItems(data.items); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [section]);
@@ -36,7 +36,7 @@ export default function ContentSection({ section }) {
 
       {!loading && items.length === 0 && (
         <div className="card-tactical rounded-xl p-10 text-center flex flex-col items-center gap-3" data-testid={`content-empty-${section}`}>
-          <ImageOff className="text-white/40" size={40}/>
+          <ImageOff className="text-white/40" size={40} />
           <div className="font-heading font-bold text-lg">Nothing published yet</div>
           <div className="text-white/50 text-sm max-w-md">Our team hasn&apos;t uploaded anything to this section. Check back soon — admins push new research here every trading day.</div>
         </div>

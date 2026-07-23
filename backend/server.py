@@ -10,12 +10,33 @@ from typing import Optional, List
 import os, uuid, logging, pathlib, shutil
 import httpx
 import asyncio
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
+import os
+
 load_dotenv()
+
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("trendtracker")
+
+async def get_finnhub_quote(symbol: str):
+    url = "https://finnhub.io/api/v1/quote"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            url,
+            params={
+                "symbol": symbol,
+                "token": FINNHUB_API_KEY
+            }
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail="Finnhub API Error")
+
+        return response.json()
 
 # ---------- Config ----------
 MONGO_URL = os.environ["MONGO_URL"]
@@ -43,6 +64,7 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
 app = FastAPI(title="TrendTracker Pro API")
+scheduler = AsyncIOScheduler()
 
 app.add_middleware(
     CORSMiddleware,
@@ -233,6 +255,33 @@ async def startup():
         }
         await db.users.insert_one(admin)
         logger.info("Seeded admin user %s", ADMIN_EMAIL)
+        # Start live market scheduler
+
+    if not scheduler.running:
+            
+            scheduler.add_job(
+
+                refresh_market_cache,
+
+                "interval",
+
+                seconds=30,
+
+                id="market_refresh",
+
+                replace_existing=True,
+
+                max_instances=1,
+            )
+            scheduler.start()
+
+            # Server start hote hi ek baar live data fetch karo
+    await refresh_market_cache()
+    
+
+    logger.info("Finnhub live market scheduler started.")
+
+        
 
     # Seed plans if empty
     if await db.plans.count_documents({}) == 0:
@@ -255,6 +304,53 @@ def strip_id(d):
     d.pop("_id", None)
     return d
 
+STOCKS = {
+    "AAPL": "Apple Inc.",
+    "MSFT": "Microsoft Corp.",
+    "NVDA": "NVIDIA Corp.",
+    "AMZN": "Amazon.com Inc.",
+    "META": "Meta Platforms",
+    "GOOGL": "Alphabet Inc.",
+    "TSLA": "Tesla Inc.",
+    "SPY": "S&P 500 ETF"
+}
+
+async def refresh_market_cache():
+    if not FINNHUB_API_KEY:
+        return
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        await db.live_stocks.delete_many({})
+
+        for symbol, name in STOCKS.items():
+            try:
+                response = await client.get(
+                    "https://finnhub.io/api/v1/quote",
+                    params={
+                        "symbol": symbol,
+                        "token": FINNHUB_API_KEY
+                    }
+                )
+
+                if response.status_code != 200:
+                    continue
+
+                quote = response.json()
+
+                stock = {
+                    "id": str(uuid.uuid4()),
+                    "symbol": symbol,
+                    "name": name,
+                    "price": quote.get("c", 0),
+                    "change_pct": quote.get("dp", 0),
+                    "direction": "up" if quote.get("dp", 0) >= 0 else "down",
+                    "updated_at": iso(now_utc())
+                }
+
+                await db.live_stocks.insert_one(stock)
+
+            except Exception as e:
+                logger.error(f"{symbol}: {e}")
 # ---------- Health / Config ----------
 @app.get("/api/health")
 async def health():
@@ -327,27 +423,60 @@ async def get_plans():
 @app.get("/api/stocks")
 async def get_stocks():
 
-    if TWELVE_DATA_API_KEY:
+    docs = await db.live_stocks.find({}).to_list(100)
 
-        try:
-            await refresh_market_cache()
-
-            docs = await db.live_stocks.find({}).to_list(100)
-
-            if docs:
-                return {
-                    "stocks": [strip_id(d) for d in docs],
-                    "source": "live"
-                }
-
-        except Exception as e:
-            logger.error(f"Live Market Error: {e}")
+    if docs:
+        return {
+            "stocks": [strip_id(d) for d in docs],
+            "source": "live"
+        }
 
     docs = await db.stocks.find({}).to_list(100)
 
     return {
         "stocks": [strip_id(d) for d in docs],
         "source": "database"
+    }
+@app.get("/api/signals")
+async def get_signals():
+
+    stocks = await db.live_stocks.find({}).to_list(100)
+
+    if not stocks:
+        stocks = await db.stocks.find({}).to_list(100)
+
+    signals = []
+
+    for stock in stocks:
+
+        change = stock.get("change_pct", 0)
+
+        if change >= 2:
+            signal = "BUY"
+            color = "green"
+
+        elif change <= -2:
+            signal = "SELL"
+            color = "red"
+
+        else:
+            signal = "HOLD"
+            color = "yellow"
+
+        signals.append({
+            "symbol": stock["symbol"],
+            "name": stock["name"],
+            "price": stock["price"],
+            "change_pct": change,
+            "signal": signal,
+            "color": color,
+            "updated_at": stock["updated_at"]
+        })
+
+    signals.sort(key=lambda x: abs(x["change_pct"]), reverse=True)
+
+    return {
+        "signals": signals
     }
 
 # ---------- Membership helpers ----------
