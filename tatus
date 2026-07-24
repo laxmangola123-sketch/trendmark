@@ -1,0 +1,336 @@
+warning: in the working copy of 'backend/server.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/backend/server.py b/backend/server.py[m
+[1mindex 96ca90d6..a68cefe9 100644[m
+[1m--- a/backend/server.py[m
+[1m+++ b/backend/server.py[m
+[36m@@ -442,6 +442,36 @@[m [masync def get_stocks():[m
+         "stocks": [strip_id(d) for d in docs],[m
+         "source": "database"[m
+     }[m
+[32m+[m[32m# ==============================[m
+[32m+[m[32m# Dashboard Content APIs[m
+[32m+[m[32m# ==============================[m
+[32m+[m
+[32m+[m[32m@app.get("/api/content/portfolio")[m
+[32m+[m[32masync def portfolio_content():[m
+[32m+[m[32m    return {[m
+[32m+[m[32m        "title": "Live Portfolio",[m
+[32m+[m[32m        "description": "Track your US stock portfolio live",[m
+[32m+[m[32m        "features": [[m
+[32m+[m[32m            "Live profit/loss",[m
+[32m+[m[32m            "Stock performance",[m
+[32m+[m[32m            "Risk analysis",[m
+[32m+[m[32m            "Portfolio insights"[m
+[32m+[m[32m        ][m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m
+[32m+[m[32m@app.get("/api/content/watchlist")[m
+[32m+[m[32masync def watchlist_content():[m
+[32m+[m[32m    return {[m
+[32m+[m[32m        "title": "Smart Watchlist",[m
+[32m+[m[32m        "description": "Track your favorite US stocks",[m
+[32m+[m[32m        "features": [[m
+[32m+[m[32m            "Live price",[m
+[32m+[m[32m            "Price movement",[m
+[32m+[m[32m            "AI signals",[m
+[32m+[m[32m            "Market trends"[m
+[32m+[m[32m        ][m
+[32m+[m[32m    }[m
+ @app.get("/api/signals")[m
+ async def get_signals():[m
+ [m
+[36m@@ -484,6 +514,7 @@[m [masync def get_signals():[m
+         "signals": signals[m
+     }[m
+ [m
+[32m+[m
+ # ---------- Membership helpers ----------[m
+ async def _find_plan(plan_id: str):[m
+     plan = await db.plans.find_one({"id": plan_id, "active": True})[m
+[1mdiff --git a/frontend/src/components/admin/KycAdmin.jsx b/frontend/src/components/admin/KycAdmin.jsx[m
+[1mdeleted file mode 100644[m
+[1mindex c0731ef6..00000000[m
+[1m--- a/frontend/src/components/admin/KycAdmin.jsx[m
+[1m+++ /dev/null[m
+[36m@@ -1,149 +0,0 @@[m
+[31m-import React from "react";[m
+[31m-import { api } from "../../lib/api";[m
+[31m-import { toast } from "sonner";[m
+[31m-import { FileText } from "lucide-react";[m
+[31m-[m
+[31m-const STATUS_TONE = {[m
+[31m-  approved: "text-laser",[m
+[31m-  pending: "text-amber",[m
+[31m-  rejected: "text-blaze",[m
+[31m-};[m
+[31m-[m
+[31m-export default function KycAdmin({ items, onChange }) {[m
+[31m-[m
+[31m-  // Fix: handle API object response[m
+[31m-  const kycItems = Array.isArray(items)[m
+[31m-    ? items[m
+[31m-    : items?.items || items?.data || items?.results || [];[m
+[31m-[m
+[31m-  const setStatus = async (item, status) => {[m
+[31m-    try {[m
+[31m-      await api.patch([m
+[31m-        `/api/admin/kyc/${item.id}/status?status=${status}`[m
+[31m-      );[m
+[31m-[m
+[31m-      toast.success(`${item.user_email}: ${status}`);[m
+[31m-      onChange?.();[m
+[31m-[m
+[31m-    } catch (e) {[m
+[31m-      toast.error([m
+[31m-        e?.response?.data?.detail || "Update failed"[m
+[31m-      );[m
+[31m-    }[m
+[31m-  };[m
+[31m-[m
+[31m-  const backend = process.env.REACT_APP_BACKEND_URL || "";[m
+[31m-[m
+[31m-  return ([m
+[31m-    <div[m
+[31m-      className="card-tactical rounded-xl overflow-hidden"[m
+[31m-      data-testid="admin-kyc-section"[m
+[31m-    >[m
+[31m-      <table className="w-full text-sm">[m
+[31m-[m
+[31m-        <thead className="bg-black/40 text-white/60">[m
+[31m-          <tr>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">User</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">Full name</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">DOB</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">Passport</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">Address</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">Document</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">Status</th>[m
+[31m-            <th className="text-left px-3 py-2 tag-uppercase">Action</th>[m
+[31m-          </tr>[m
+[31m-        </thead>[m
+[31m-[m
+[31m-[m
+[31m-        <tbody>[m
+[31m-[m
+[31m-          {kycItems.map((k) => ([m
+[31m-            <tr[m
+[31m-              key={k.id}[m
+[31m-              className="border-t border-white/5"[m
+[31m-            >[m
+[31m-[m
+[31m-              <td className="px-3 py-2">[m
+[31m-                {k.user_email}[m
+[31m-              </td>[m
+[31m-[m
+[31m-              <td className="px-3 py-2">[m
+[31m-                {k.full_name}[m
+[31m-              </td>[m
+[31m-[m
+[31m-              <td className="px-3 py-2 font-mono">[m
+[31m-                {k.dob}[m
+[31m-              </td>[m
+[31m-[m
+[31m-              <td className="px-3 py-2 font-mono">[m
+[31m-                {k.passport_number}[m
+[31m-              </td>[m
+[31m-[m
+[31m-              <td className="px-3 py-2 text-white/60 text-xs">[m
+[31m-                {k.address_line1}, {k.address_city}, {k.address_state} {k.address_zip}[m
+[31m-              </td>[m
+[31m-[m
+[31m-              <td className="px-3 py-2">[m
+[31m-                {k.document_url ? ([m
+[31m-                  <a[m
+[31m-                    href={`${backend}${k.document_url}`}[m
+[31m-                    target="_blank"[m
+[31m-                    rel="noreferrer"[m
+[31m-                    className="text-volt hover:text-white flex items-center gap-1"[m
+[31m-                  >[m
+[31m-                    <FileText size={14} />[m
+[31m-                    PDF[m
+[31m-                  </a>[m
+[31m-                ) : ([m
+[31m-                  "No document"[m
+[31m-                )}[m
+[31m-              </td>[m
+[31m-[m
+[31m-[m
+[31m-              <td className="px-3 py-2">[m
+[31m-                <span className={`tag-uppercase ${STATUS_TONE[k.status] || "text-white/50"}`}>[m
+[31m-                  {k.status}[m
+[31m-                </span>[m
+[31m-              </td>[m
+[31m-[m
+[31m-[m
+[31m-              <td className="px-3 py-2 flex gap-1">[m
+[31m-[m
+[31m-                {k.status !== "approved" && ([m
+[31m-                  <button[m
+[31m-                    onClick={() => setStatus(k, "approved")}[m
+[31m-                    className="btn-primary px-2 py-1 rounded text-xs"[m
+[31m-                  >[m
+[31m-                    Approve[m
+[31m-                  </button>[m
+[31m-                )}[m
+[31m-[m
+[31m-                {k.status !== "rejected" && ([m
+[31m-                  <button[m
+[31m-                    onClick={() => setStatus(k, "rejected")}[m
+[31m-                    className="btn-outline px-2 py-1 rounded text-xs"[m
+[31m-                  >[m
+[31m-                    Reject[m
+[31m-                  </button>[m
+[31m-                )}[m
+[31m-[m
+[31m-              </td>[m
+[31m-[m
+[31m-            </tr>[m
+[31m-          ))}[m
+[31m-[m
+[31m-[m
+[31m-          {kycItems.length === 0 && ([m
+[31m-            <tr>[m
+[31m-              <td colSpan={8} className="px-4 py-6 text-center text-white/50">[m
+[31m-                No KYC submissions yet.[m
+[31m-              </td>[m
+[31m-            </tr>[m
+[31m-          )}[m
+[31m-[m
+[31m-        </tbody>[m
+[31m-[m
+[31m-      </table>[m
+[31m-    </div>[m
+[31m-  );[m
+[31m-}[m
+\ No newline at end of file[m
+[1mdiff --git a/frontend/src/pages/Kyc.jsx b/frontend/src/pages/Kyc.jsx[m
+[1mdeleted file mode 100644[m
+[1mindex e25614bb..00000000[m
+[1m--- a/frontend/src/pages/Kyc.jsx[m
+[1m+++ /dev/null[m
+[36m@@ -1,124 +0,0 @@[m
+[31m-import React, { useEffect, useState } from "react";[m
+[31m-import { api, getToken } from "../lib/api";[m
+[31m-import { toast } from "sonner";[m
+[31m-import { useAuth } from "../lib/auth";[m
+[31m-import { motion } from "framer-motion";[m
+[31m-import { ShieldCheck, Clock, XCircle, Upload } from "lucide-react";[m
+[31m-[m
+[31m-const STATE_STYLES = {[m
+[31m-  approved: { icon: ShieldCheck, tone: "text-laser", label: "APPROVED" },[m
+[31m-  pending:  { icon: Clock,       tone: "text-amber", label: "PENDING REVIEW" },[m
+[31m-  rejected: { icon: XCircle,     tone: "text-blaze", label: "REJECTED" },[m
+[31m-  none:     { icon: Upload,      tone: "text-white/70", label: "NOT SUBMITTED" },[m
+[31m-};[m
+[31m-[m
+[31m-export default function KycPage() {[m
+[31m-  const { refresh } = useAuth();[m
+[31m-  const [kyc, setKyc] = useState(null);[m
+[31m-  const [loading, setLoading] = useState(true);[m
+[31m-  const [submitting, setSubmitting] = useState(false);[m
+[31m-  const [form, setForm] = useState({[m
+[31m-    full_name: "", dob: "",[m
+[31m-    address_line1: "", address_city: "", address_state: "", address_zip: "",[m
+[31m-    passport_number: "",[m
+[31m-  });[m
+[31m-  const [file, setFile] = useState(null);[m
+[31m-[m
+[31m-  useEffect(() => {[m
+[31m-    api.get("/api/kyc/me").then(({data}) => setKyc(data.kyc)).catch(() => {}).finally(() => setLoading(false));[m
+[31m-  }, []);[m
+[31m-[m
+[31m-  const submit = async (e) => {[m
+[31m-    e.preventDefault();[m
+[31m-    if (!file) return toast.error("Please attach a PDF document.");[m
+[31m-    setSubmitting(true);[m
+[31m-    try {[m
+[31m-      const fd = new FormData();[m
+[31m-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));[m
+[31m-      fd.append("document", file);[m
+[31m-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/kyc/submit`, {[m
+[31m-        method: "POST",[m
+[31m-        headers: { Authorization: `Bearer ${getToken()}` },[m
+[31m-        body: fd,[m
+[31m-      });[m
+[31m-      const data = await res.json();[m
+[31m-      if (!res.ok) throw new Error(data.detail || "Submission failed");[m
+[31m-      setKyc(data.kyc);[m
+[31m-      await refresh();[m
+[31m-      toast.success("KYC submitted. Our team will review it shortly.");[m
+[31m-    } catch (err) {[m
+[31m-      toast.error(err.message);[m
+[31m-    } finally { setSubmitting(false); }[m
+[31m-  };[m
+[31m-[m
+[31m-  const state = STATE_STYLES[kyc?.status || "none"];[m
+[31m-  const StateIcon = state.icon;[m
+[31m-[m
+[31m-  return ([m
+[31m-    <div className="max-w-4xl">[m
+[31m-      <div className="tag-uppercase text-volt mb-2">KYC verification</div>[m
+[31m-      <h1 className="font-heading font-black text-4xl tracking-tighter mb-6">Verify your identity</h1>[m
+[31m-[m
+[31m-      <motion.div initial={{opacity:0, y:16}} animate={{opacity:1, y:0}} className="card-tactical rounded-xl p-6 mb-8 flex items-center gap-4" data-testid="kyc-status-card">[m
+[31m-        <StateIcon className={state.tone} size={28}/>[m
+[31m-        <div className="flex-1">[m
+[31m-          <div className={`font-heading font-bold text-lg ${state.tone}`}>{state.label}</div>[m
+[31m-          <div className="text-white/60 text-sm">[m
+[31m-            {kyc?.status === "approved" && "You are fully verified. Premium features unlocked."}[m
+[31m-            {kyc?.status === "pending"  && "Our team is reviewing your documents. You'll hear back within 24h."}[m
+[31m-            {kyc?.status === "rejected" && `Submission rejected. ${kyc.notes || "Please resubmit correct documents."}`}[m
+[31m-            {(!kyc || kyc?.status === "none") && "Submit US-style KYC (passport + DOB + address + PDF) to unlock full trading features."}[m
+[31m-          </div>[m
+[31m-        </div>[m
+[31m-      </motion.div>[m
+[31m-[m
+[31m-      {loading && <div className="text-white/50 text-sm">Loading...</div>}[m
+[31m-[m
+[31m-      {(!loading && (!kyc || kyc.status === "rejected")) && ([m
+[31m-        <form onSubmit={submit} className="card-tactical rounded-xl p-6 space-y-4" data-testid="kyc-form">[m
+[31m-          <div className="grid md:grid-cols-2 gap-4">[m
+[31m-            <Field label="Full legal name" testId="kyc-name"           value={form.full_name}       onChange={v => setForm({...form, full_name: v})}/>[m
+[31m-            <Field label="Date of birth (YYYY-MM-DD)" testId="kyc-dob" value={form.dob}             onChange={v => setForm({...form, dob: v})} placeholder="1990-01-15"/>[m
+[31m-            <Field label="Passport number" testId="kyc-passport"       value={form.passport_number} onChange={v => setForm({...form, passport_number: v})}/>[m
+[31m-            <Field label="Address line 1" testId="kyc-address1"        value={form.address_line1}   onChange={v => setForm({...form, address_line1: v})}/>[m
+[31m-            <Field label="City" testId="kyc-city"                      value={form.address_city}    onChange={v => setForm({...form, address_city: v})}/>[m
+[31m-            <Field label="State" testId="kyc-state"                    value={form.address_state}   onChange={v => setForm({...form, address_state: v})} placeholder="NJ"/>[m
+[31m-            <Field label="ZIP" testId="kyc-zip"                        value={form.address_zip}     onChange={v => setForm({...form, address_zip: v})} placeholder="08540"/>[m
+[31m-          </div>[m
+[31m-[m
+[31m-          <div>[m
+[31m-            <label className="tag-uppercase text-white/50 block mb-2">Upload document (PDF)</label>[m
+[31m-            <input data-testid="kyc-file" type="file" accept="application/pdf" required[m
+[31m-              onChange={(e) => setFile(e.target.files?.[0] || null)}[m
+[31m-              className="w-full text-sm text-white/80"/>[m
+[31m-            <p className="text-xs text-white/40 mt-2">Passport scan or drivers-license PDF. Max 10 MB.</p>[m
+[31m-          </div>[m
+[31m-[m
+[31m-          <button data-testid="kyc-submit" type="submit" disabled={submitting} className="btn-primary w-full py-3 rounded-md font-semibold text-sm">[m
+[31m-            {submitting ? "Submitting..." : "Submit for review"}[m
+[31m-          </button>[m
+[31m-        </form>[m
+[31m-      )}[m
+[31m-[m
+[31m-      {kyc && kyc.status !== "rejected" && ([m
+[31m-        <div className="card-tactical rounded-xl p-6 text-sm text-white/70 space-y-2" data-testid="kyc-submission-summary">[m
+[31m-          <div><span className="text-white/40">Full name:</span> {kyc.full_name}</div>[m
+[31m-          <div><span className="text-white/40">DOB:</span> {kyc.dob}</div>[m
+[31m-          <div><span className="text-white/40">Passport:</span> {kyc.passport_number}</div>[m
+[31m-          <div><span className="text-white/40">Address:</span> {kyc.address_line1}, {kyc.address_city}, {kyc.address_state} {kyc.address_zip}</div>[m
+[31m-          <div><span className="text-white/40">Submitted:</span> {kyc.submitted_at?.slice(0, 16).replace("T", " ")}</div>[m
+[31m-        </div>[m
+[31m-      )}[m
+[31m-    </div>[m
+[31m-  );[m
+[31m-}[m
+[31m-[m
+[31m-function Field({ label, value, onChange, testId, placeholder }) {[m
+[31m-  return ([m
+[31m-    <div>[m
+[31m-      <label className="tag-uppercase text-white/50 block mb-2">{label}</label>[m
+[31m-      <input data-testid={testId} required value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}[m
+[31m-        className="w-full px-4 py-3 rounded-md text-sm"/>[m
+[31m-    </div>[m
+[31m-  );[m
+[31m-}[m

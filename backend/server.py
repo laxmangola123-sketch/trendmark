@@ -442,6 +442,36 @@ async def get_stocks():
         "stocks": [strip_id(d) for d in docs],
         "source": "database"
     }
+# ==============================
+# Dashboard Content APIs
+# ==============================
+
+@app.get("/api/content/portfolio")
+async def portfolio_content():
+    return {
+        "title": "Live Portfolio",
+        "description": "Track your US stock portfolio live",
+        "features": [
+            "Live profit/loss",
+            "Stock performance",
+            "Risk analysis",
+            "Portfolio insights"
+        ]
+    }
+
+
+@app.get("/api/content/watchlist")
+async def watchlist_content():
+    return {
+        "title": "Smart Watchlist",
+        "description": "Track your favorite US stocks",
+        "features": [
+            "Live price",
+            "Price movement",
+            "AI signals",
+            "Market trends"
+        ]
+    }
 @app.get("/api/signals")
 async def get_signals():
 
@@ -483,6 +513,7 @@ async def get_signals():
     return {
         "signals": signals
     }
+
 
 # ---------- Membership helpers ----------
 async def _find_plan(plan_id: str):
