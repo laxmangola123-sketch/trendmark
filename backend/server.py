@@ -316,6 +316,9 @@ STOCKS = {
 }
 
 async def refresh_market_cache():
+
+    logger.info("Refreshing live market data...")
+
     if not FINNHUB_API_KEY:
         return
 
@@ -336,6 +339,8 @@ async def refresh_market_cache():
                     continue
 
                 quote = response.json()
+
+                logger.info(f"{symbol} -> {quote.get('c')} ({quote.get('dp')}%)")
 
                 stock = {
                     "id": str(uuid.uuid4()),

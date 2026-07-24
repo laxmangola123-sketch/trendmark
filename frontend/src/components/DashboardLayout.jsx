@@ -1,15 +1,41 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, Briefcase, TrendingUp, BarChart3, Bookmark, ShieldCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  Briefcase,
+  TrendingUp,
+  BarChart3,
+  Bookmark,
+} from "lucide-react";
 import { useAuth } from "../lib/auth";
 
 const NAV = [
-  { to: "/dashboard",           label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/portfolio", label: "Portfolio", icon: Briefcase },
-  { to: "/dashboard/markets",   label: "Markets",   icon: TrendingUp },
-  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/dashboard/watchlist", label: "Watchlist", icon: Bookmark },
-  { to: "/kyc",                 label: "KYC",       icon: ShieldCheck },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    end: true,
+  },
+  {
+    to: "/dashboard/portfolio",
+    label: "Portfolio",
+    icon: Briefcase,
+  },
+  {
+    to: "/dashboard/markets",
+    label: "Markets",
+    icon: TrendingUp,
+  },
+  {
+    to: "/dashboard/analytics",
+    label: "Analytics",
+    icon: BarChart3,
+  },
+  {
+    to: "/dashboard/watchlist",
+    label: "Watchlist",
+    icon: Bookmark,
+  },
 ];
 
 function itemClass({ isActive }) {
@@ -23,24 +49,34 @@ function itemClass({ isActive }) {
 
 export default function DashboardLayout() {
   const { user } = useAuth();
+
   if (!user) return null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
-      <aside className="lg:sticky lg:top-24 self-start" data-testid="dashboard-sidebar">
+      <aside
+        className="lg:sticky lg:top-24 self-start"
+        data-testid="dashboard-sidebar"
+      >
         <div className="card-tactical rounded-2xl p-3">
           <div className="px-3 py-2 mb-2">
-            <div className="tag-uppercase text-white/40 text-[10px]">Member area</div>
-            <div className="font-heading font-bold text-white text-sm truncate">{user.name || user.email}</div>
+            <div className="tag-uppercase text-white/40 text-[10px]">
+              Member Area
+            </div>
+
+            <div className="font-heading font-bold text-white text-sm truncate">
+              {user.name || user.email}
+            </div>
           </div>
+
           <nav className="flex flex-col gap-1">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
                 end={n.end}
-                data-testid={`side-nav-${n.label.toLowerCase()}`}
                 className={itemClass}
+                data-testid={`side-nav-${n.label.toLowerCase()}`}
               >
                 <n.icon size={18} />
                 <span>{n.label}</span>

@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { AuthProvider } from "./lib/auth";
-
+import Analytics from "./pages/Analytics";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -11,7 +11,6 @@ import Dashboard from "./pages/Dashboard";
 import Markets from "./pages/Markets";
 import Portfolio from "./pages/Portfolio";
 import Watchlist from "./pages/Watchlist";
-import Kyc from "./pages/Kyc";
 import Admin from "./pages/Admin";
 
 import DashboardLayout from "./components/DashboardLayout";
@@ -34,7 +33,7 @@ function App() {
                         <Route path="/dashboard/portfolio" element={<Portfolio />} />
                         <Route path="/dashboard/watchlist" element={<Watchlist />} />
                         <Route path="/dashboard/plans" element={<Plans />} />
-                        <Route path="/kyc" element={<Kyc />} />
+                        <Route path="/dashboard/analytics" element={<Analytics />} />
                     </Route>
 
                     {/* Optional redirects / old URLs */}
@@ -42,6 +41,7 @@ function App() {
                     <Route path="/markets" element={<Markets />} />
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/watchlist" element={<Watchlist />} />
+                    <Route path="/analytics" element={<Analytics />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
