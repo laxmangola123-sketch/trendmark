@@ -7,9 +7,7 @@ import {
   Crown,
   AlertTriangle,
   MessageCircle,
-  ShieldCheck,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import MembershipModal from "../components/MembershipModal";
 import SignalsList from "../components/SignalsList";
 import AccountPanel from "../components/AccountPanel";
@@ -57,33 +55,6 @@ function ExpiredBanner({ onUpgrade }) {
       >
         Get Membership
       </button>
-    </div>
-  );
-}
-
-function KycBanner({ status }) {
-  if (status === "approved") return null;
-
-  return (
-    <div className="mb-6 card-tactical rounded-xl p-5 flex items-start gap-3 border-amber/40">
-      <ShieldCheck className="text-amber mt-1" size={20} />
-
-      <div className="flex-1">
-        <div className="font-heading font-bold text-lg">
-          KYC Verification
-        </div>
-
-        <div className="text-white/60 text-sm">
-          Complete your KYC to unlock premium features.
-        </div>
-      </div>
-
-      <Link
-        to="/kyc"
-        className="btn-outline px-4 py-2 rounded-md"
-      >
-        Open KYC
-      </Link>
     </div>
   );
 }
@@ -164,8 +135,6 @@ export default function Dashboard() {
             onUpgrade={() => setShowModal(true)}
           />
         )}
-
-        <KycBanner status={user.kyc_status} />
 
         {user.has_membership && (
           <WhatsAppCard url={user.whatsapp_url} />
