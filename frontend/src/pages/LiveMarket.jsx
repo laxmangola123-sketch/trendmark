@@ -11,42 +11,13 @@ import {
     Activity,
 } from "lucide-react";
 
-export default function LiveMarkets() {
+export default function LiveMarket() {
     const [stocks, setStocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [source, setSource] = useState("");
 
-    const marketOverview = [
-        {
-            name: "S&P 500",
-            symbol: "^GSPC",
-            value: "6,410.31",
-            change: "+0.84%",
-            up: true,
-        },
-        {
-            name: "NASDAQ",
-            symbol: "^IXIC",
-            value: "23,845.12",
-            change: "+1.16%",
-            up: true,
-        },
-        {
-            name: "DOW JONES",
-            symbol: "^DJI",
-            value: "45,173.52",
-            change: "+0.48%",
-            up: true,
-        },
-        {
-            name: "VIX",
-            symbol: "^VIX",
-            value: "15.32",
-            change: "-2.12%",
-            up: false,
-        },
-    ];
+    const [marketOverview, setMarketOverview] = useState([]);
 
     const topGainers = [
         { symbol: "NVDA", change: "+5.41%" },
@@ -64,7 +35,7 @@ export default function LiveMarkets() {
 
     const loadStocks = async () => {
         try {
-            const res = await api.get("/stocks");
+            const res = await api.get("/api/stocks");
 
             setStocks(res.data.stocks || []);
             setSource(res.data.source || "");
@@ -75,12 +46,26 @@ export default function LiveMarkets() {
         }
     };
 
+    const loadMarketOverview = async () => {
+        try {
+            const res = await api.get("/api/market-overview");
+            setMarketOverview(res.data.indices || []);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         loadStocks();
+        loadMarketOverview();
 
-        const interval = setInterval(loadStocks, 30000);
+        const interval = setInterval(() => {
+            loadStocks();
+            loadMarketOverview();
+        }, 30000);
 
         return () => clearInterval(interval);
+
     }, []);
 
     const filteredStocks = useMemo(() => {
@@ -154,8 +139,8 @@ export default function LiveMarkets() {
 
                         <div
                             className={`mt-4 font-bold ${item.up
-                                    ? "text-laser"
-                                    : "text-blaze"
+                                ? "text-laser"
+                                : "text-blaze"
                                 }`}
                         >
                             {item.change}
@@ -415,8 +400,8 @@ export default function LiveMarkets() {
 
                                         <div
                                             className={`font-bold ${stock.change_pct >= 0
-                                                    ? "text-laser"
-                                                    : "text-blaze"
+                                                ? "text-laser"
+                                                : "text-blaze"
                                                 }`}
                                         >
                                             {Number(stock.change_pct).toFixed(2)}%
@@ -426,8 +411,8 @@ export default function LiveMarkets() {
 
                                     <div
                                         className={`px-3 py-1 rounded-full text-xs font-bold ${stock.direction === "up"
-                                                ? "bg-green-500/20 text-laser"
-                                                : "bg-red-500/20 text-blaze"
+                                            ? "bg-green-500/20 text-laser"
+                                            : "bg-red-500/20 text-blaze"
                                             }`}
                                     >
                                         {stock.direction === "up"
