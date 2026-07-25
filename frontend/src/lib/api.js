@@ -59,5 +59,17 @@ export function clearAuth() {
   localStorage.removeItem("user");
 }
 
+export const getWatchlist = () => api.get("/watchlist");
+
+export const searchStocks = (q) =>
+  api.get(`/stocks/search?q=${encodeURIComponent(q)}`);
+
+export const addWatchlist = (symbol, name) =>
+  api.post("/watchlist/add", { symbol, name });
+
+export const removeWatchlist = (symbol) =>
+  api.delete(`/watchlist/${symbol}`);
+
+// Exports
 export { api };
 export default api;

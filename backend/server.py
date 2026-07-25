@@ -62,7 +62,7 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
-
+watchlist = db.watchlist
 app = FastAPI(title="TrendTracker Pro API")
 scheduler = AsyncIOScheduler()
 
@@ -210,6 +210,9 @@ class StockIn(BaseModel):
     price: float
     change_pct: float
 
+class WatchlistAdd(BaseModel):
+    symbol: str
+    name: str = ""
 # ---------- Defaults ----------
 DEFAULT_PLANS = [
     {"id": "starter",  "name": "Starter",  "price": 79,  "credits": 79,  "features": ["Access to core dashboard", "Daily stock picks", "Standard signal alerts", "Email support"], "whatsapp_url": "https://chat.whatsapp.com/FDGHHv9oAuJ27TZaqsRcBi", "popular": False, "active": True},
@@ -441,6 +444,99 @@ async def get_stocks():
     return {
         "stocks": [strip_id(d) for d in docs],
         "source": "database"
+    }
+
+# ==============================
+# Watchlist APIs
+
+@app.get("/api/watchlist")
+async def get_watchlist(user=Depends(get_current_user)):
+    docs = await db.watchlist.find(
+        {"user_id": user["id"]}
+    ).to_list(100)
+
+    return {
+        "watchlist": [strip_id(d) for d in docs]
+    }
+
+
+
+@app.post("/api/watchlist/add")
+async def add_watchlist(
+    payload: WatchlistAdd,
+    user=Depends(get_current_user)
+):
+    symbol = payload.symbol.upper()
+
+    exists = await db.watchlist.find_one({
+        "user_id": user["id"],
+        "symbol": symbol
+    })
+
+    if exists:
+        return {"message": "Already Added"}
+
+    await db.watchlist.insert_one({
+        "user_id": user["id"],
+        "symbol": symbol,
+        "name": payload.name,
+        "created_at": datetime.utcnow()
+    })
+
+    return {"message": "Added"}
+
+
+@app.delete("/api/watchlist/{symbol}")
+async def remove_watchlist(
+    symbol: str,
+    user=Depends(get_current_user)
+):
+    await db.watchlist.delete_one({
+        "user_id": user["id"],
+        "symbol": symbol.upper()
+    })
+
+    return {"message": "Removed"}
+
+
+@app.get("/api/stocks/search")
+async def search_stock(q: str):
+
+    docs = await db.live_stocks.find({
+        "$or": [
+            {
+                "symbol": {
+                    "$regex": q.upper()
+                }
+            },
+            {
+                "name": {
+                    "$regex": q,
+                    "$options": "i"
+                }
+            }
+        ]
+    }).to_list(20)
+
+    if not docs:
+        docs = await db.stocks.find({
+            "$or": [
+                {
+                    "symbol": {
+                        "$regex": q.upper()
+                    }
+                },
+                {
+                    "name": {
+                        "$regex": q,
+                        "$options": "i"
+                    }
+                }
+            ]
+        }).to_list(20)
+
+    return {
+        "stocks": [strip_id(d) for d in docs]
     }
 # ==============================
 # Dashboard Content APIs
