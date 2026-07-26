@@ -15,6 +15,9 @@ export default function PlanCard({
 
   const [paymentId, setPaymentId] = useState(null);
 
+  // $79 plan subscription
+  const isSubscriptionPlan = Number(plan.price) === 79;
+
 
   return (
     <div className="card-tactical rounded-xl p-6 border border-white/10">
@@ -39,59 +42,38 @@ export default function PlanCard({
       </div>
 
 
-      <PayPalButtons
+      {isSubscriptionPlan ? (
 
-        style={{
-          layout: "vertical",
-          color: "gold",
-          shape: "rect",
-          label: "paypal",
-        }}
+        // $79 Subscription Plan
+        <PayPalButtons
 
-
-        createOrder={async () => {
-
-          try {
-
-            const data = await createPaypalOrder(
-              plan.id || plan._id
-            );
+          style={{
+            shape: "rect",
+            color: "blue",
+            layout: "vertical",
+            label: "subscribe",
+          }}
 
 
-            setPaymentId(data.payment_id);
+          createSubscription={(data, actions) => {
+
+            return actions.subscription.create({
+              plan_id: "P-50M746753V0875436NJS52GQ",
+            });
+
+          }}
 
 
-            return data.paypal.id;
+          onApprove={(data) => {
 
-
-          } catch (error) {
-
-            console.error(error);
-
-            toast.error(
-              "Unable to create PayPal order"
-            );
-
-            throw error;
-
-          }
-
-        }}
-
-
-
-        onApprove={async (data) => {
-
-          try {
-
-            await capturePaypalOrder(
-              data.orderID,
-              paymentId
+            console.log(
+              "Subscription ID:",
+              data.subscriptionID
             );
 
 
             toast.success(
-              "Membership Activated"
+              "Subscription Activated"
             );
 
 
@@ -99,32 +81,115 @@ export default function PlanCard({
 
             onClose?.();
 
+          }}
 
-          } catch (error) {
 
-            console.error(error);
+          onError={(err) => {
+
+            console.error(err);
 
             toast.error(
-              "Payment capture failed"
+              "PayPal Subscription Failed"
             );
 
-          }
+          }}
 
-        }}
+        />
+
+
+      ) : (
+
+        // Normal One Time Payment Plans
+        <PayPalButtons
+
+          style={{
+            layout: "vertical",
+            color: "gold",
+            shape: "rect",
+            label: "paypal",
+          }}
+
+
+          createOrder={async () => {
+
+            try {
+
+              const data = await createPaypalOrder(
+                plan.id || plan._id
+              );
+
+
+              setPaymentId(
+                data.payment_id
+              );
+
+
+              return data.paypal.id;
+
+
+            } catch (error) {
+
+              console.error(error);
+
+              toast.error(
+                "Unable to create PayPal order"
+              );
+
+              throw error;
+
+            }
+
+          }}
 
 
 
-        onError={(err) => {
+          onApprove={async (data) => {
 
-          console.error(err);
+            try {
 
-          toast.error(
-            "PayPal Payment Failed"
-          );
+              await capturePaypalOrder(
+                data.orderID,
+                paymentId
+              );
 
-        }}
 
-      />
+              toast.success(
+                "Membership Activated"
+              );
+
+
+              onPurchased?.();
+
+              onClose?.();
+
+
+            } catch (error) {
+
+              console.error(error);
+
+              toast.error(
+                "Payment capture failed"
+              );
+
+            }
+
+          }}
+
+
+
+          onError={(err) => {
+
+            console.error(err);
+
+            toast.error(
+              "PayPal Payment Failed"
+            );
+
+          }}
+
+        />
+
+      )}
 
     </div>
   );
