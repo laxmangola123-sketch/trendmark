@@ -20,7 +20,7 @@ function App() {
     return (
         <PayPalScriptProvider
             options={{
-                "client-id": "YOUR_PAYPAL_CLIENT_ID",
+                "client-id": "ASquYrn1012dci9lciL6HO4no7Lrw7tze4JMH8db8TSExQu8ouDSv0CphpXLqZQvygh2YClwUoiWO4A9",
                 currency: "USD",
                 intent: "capture",
             }}
