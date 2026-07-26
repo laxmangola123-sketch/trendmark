@@ -18,6 +18,19 @@ load_dotenv()
 
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 
+# ==========================
+# PayPal Configuration
+
+PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
+PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
+PAYPAL_MODE = os.getenv("PAYPAL_MODE", "sandbox")
+
+PAYPAL_BASE_URL = (
+    "https://api-m.sandbox.paypal.com"
+    if PAYPAL_MODE == "sandbox"
+    else "https://api-m.paypal.com"
+)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("trendtracker")
 
@@ -37,6 +50,88 @@ async def get_finnhub_quote(symbol: str):
             raise HTTPException(status_code=500, detail="Finnhub API Error")
 
         return response.json()
+    
+# PayPal Helper Functions
+# =====================================================
+
+async def get_paypal_access_token():
+    auth = (PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET)
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{PAYPAL_BASE_URL}/v1/oauth2/token",
+            auth=auth,
+            data={"grant_type": "client_credentials"},
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to PayPal"
+        )
+
+    return response.json()["access_token"]
+
+
+async def create_paypal_order(amount: float):
+
+    token = await get_paypal_access_token()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    body = {
+        "intent": "CAPTURE",
+        "purchase_units": [
+            {
+                "amount": {
+                    "currency_code": "USD",
+                    "value": f"{amount:.2f}",
+                }
+            }
+        ]
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{PAYPAL_BASE_URL}/v2/checkout/orders",
+            headers=headers,
+            json=body,
+        )
+
+    if response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=500,
+            detail="PayPal order creation failed"
+        )
+
+    return response.json()
+
+
+async def capture_paypal_order(order_id: str):
+
+    token = await get_paypal_access_token()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{PAYPAL_BASE_URL}/v2/checkout/orders/{order_id}/capture",
+            headers=headers,
+        )
+
+    if response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=500,
+            detail="PayPal capture failed"
+        )
+
+    return response.json()
 
 # ---------- Config ----------
 MONGO_URL = os.environ["MONGO_URL"]
@@ -446,6 +541,41 @@ async def get_stocks():
         "source": "database"
     }
 
+@app.get("/api/market-overview")
+async def market_overview():
+
+    return {
+        "indices": [
+            {
+                "name": "Dow Jones 30",
+                "symbol": "^DJI",
+                "value": 45173.52,
+                "change": 0.48,
+                "up": True
+            },
+            {
+                "name": "S&P 500",
+                "symbol": "^GSPC",
+                "value": 6410.31,
+                "change": 0.84,
+                "up": True
+            },
+            {
+                "name": "NASDAQ Composite",
+                "symbol": "^IXIC",
+                "value": 23845.12,
+                "change": 1.16,
+                "up": True
+            },
+            {
+                "name": "VIX",
+                "symbol": "^VIX",
+                "value": 15.32,
+                "change": -2.12,
+                "up": False
+            }
+        ]
+    }
 # ==============================
 # Watchlist APIs
 
@@ -645,7 +775,166 @@ async def _send_email(user: dict, subject: str, body_text: str, kind: str):
     await db.email_logs.insert_one(email_doc)
     logger.info("[MOCK EMAIL] To=%s Subject=%s", user["email"], subject)
     return email_doc
+# =====================================================
+# PayPal Create Order
+# =====================================================
 
+@app.post("/api/paypal/create-order")
+async def paypal_create_order(
+    body: PayPalOrderIn,
+    user=Depends(get_current_user)
+):
+    plan = await db.plans.find_one({"id": body.plan_id})
+
+    if not plan:
+        raise HTTPException(
+            status_code=404,
+            detail="Plan not found"
+        )
+
+    now = now_utc()
+
+    payment = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "user_email": user["email"],
+        "user_name": user.get("name", ""),
+        "plan_id": plan["id"],
+        "plan_name": plan["name"],
+        "amount": plan["price"],
+        "credits_added": plan["credits"],
+        "status": "pending",
+        "provider": "paypal",
+        "created_at": iso(now),
+    }
+
+    await db.memberships.insert_one(payment)
+
+    paypal = await create_paypal_order(plan["price"])
+
+    await db.memberships.update_one(
+    {"id": payment["id"]},
+    {
+        "$set": {
+            "paypal_order_id": paypal["id"]
+        }
+    }
+)
+
+    return {
+        "payment_id": payment["id"],
+        "paypal": paypal
+    }
+# =====================================================
+# PayPal Capture Order
+# =====================================================
+
+@app.post("/api/paypal/capture-order")
+async def paypal_capture_order(
+    body: PayPalCaptureIn
+):
+
+    # Capture payment from PayPal
+    paypal = await capture_paypal_order(body.order_id)
+
+    # Find pending payment
+    payment = await db.memberships.find_one(
+        {
+            "id": body.payment_id
+        }
+    )
+
+    if not payment:
+        raise HTTPException(
+            status_code=404,
+            detail="Payment not found"
+        )
+
+    # Already approved
+    if payment.get("status") == "approved":
+        return {
+            "ok": True,
+            "message": "Already activated"
+        }
+
+    # Find user
+    user = await db.users.find_one(
+        {
+            "id": payment["user_id"]
+        }
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    # Find plan
+    plan = await db.plans.find_one(
+        {
+            "id": payment["plan_id"]
+        }
+    )
+
+    if not plan:
+        raise HTTPException(
+            status_code=404,
+            detail="Plan not found"
+        )
+
+    now = now_utc()
+
+    # Activate membership
+    await _apply_membership_to_user(
+        user,
+        strip_id(plan),
+        now
+    )
+
+    # Update payment
+    await db.memberships.update_one(
+        {
+            "id": payment["id"]
+        },
+        {
+            "$set": {
+                "status": "approved",
+                "provider": "paypal",
+                "paypal_order_id": body.order_id,
+                "paypal_response": paypal,
+                "approved_at": iso(now),
+                "approved_by": "paypal"
+            }
+        }
+    )
+        # Send confirmation email
+    await _send_email(
+        user,
+        f"Welcome to TrendTracker Pro {plan['name']}!",
+        f"""
+Hi {user.get('name','User')},
+
+Your PayPal payment was successful.
+
+Plan:
+{plan['name']}
+
+Credits Added:
+{plan['credits']}
+
+Your membership is now active.
+
+Thank you,
+TrendTracker Pro
+""",
+        "membership_confirmation"
+    )
+
+    return {
+        "ok": True,
+        "message": "Membership Activated"
+    }
 # ---------- Membership: create pending payment + external URL ----------
 @app.post("/api/membership/purchase")
 async def purchase(body: PurchaseIn, user=Depends(get_current_user)):
@@ -791,60 +1080,6 @@ TrendTracker Pro
         "message":"Payment successful. Membership activated."
     }
 
-# ---------- KYC ----------
-@app.get("/api/kyc/me")
-async def kyc_me(user=Depends(get_current_user)):
-    doc = await db.kyc.find_one({"user_id": user["id"]})
-    if not doc:
-        return {"kyc": None}
-    return {"kyc": strip_id(doc)}
-
-@app.post("/api/kyc/submit")
-async def kyc_submit(
-    full_name: str = Form(...),
-    dob: str = Form(...),
-    address_line1: str = Form(...),
-    address_city: str = Form(...),
-    address_state: str = Form(...),
-    address_zip: str = Form(...),
-    passport_number: str = Form(...),
-    document: UploadFile = File(...),
-    user=Depends(get_current_user),
-):
-    if document.content_type not in ("application/pdf",):
-        raise HTTPException(status_code=400, detail="Only PDF documents are accepted for KYC verification.")
-
-    ext = ".pdf"
-    filename = f"{user['id']}_{uuid.uuid4().hex[:8]}{ext}"
-    dest = KYC_DIR / filename
-    with dest.open("wb") as f:
-        shutil.copyfileobj(document.file, f)
-
-    now = now_utc()
-    kyc_doc = {
-        "id": str(uuid.uuid4()),
-        "user_id": user["id"],
-        "user_email": user["email"],
-        "full_name": full_name.strip(),
-        "dob": dob.strip(),
-        "address_line1": address_line1.strip(),
-        "address_city": address_city.strip(),
-        "address_state": address_state.strip(),
-        "address_zip": address_zip.strip(),
-        "passport_number": passport_number.strip(),
-        "document_filename": filename,
-        "document_url": f"/uploads/kyc/{filename}",
-        "status": "pending",
-        "submitted_at": iso(now),
-        "reviewed_at": None,
-        "reviewed_by": None,
-        "notes": None,
-    }
-    # Upsert: replace previous submission for same user
-    await db.kyc.replace_one({"user_id": user["id"]}, kyc_doc, upsert=True)
-    await db.users.update_one({"id": user["id"]}, {"$set": {"kyc_status": "pending"}})
-
-    return {"ok": True, "kyc": kyc_doc}
 
 # ---------- Admin: Users ----------
 @app.get("/api/admin/users")

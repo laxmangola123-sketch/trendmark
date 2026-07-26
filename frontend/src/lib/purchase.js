@@ -1,49 +1,50 @@
 import api from "./api";
 
 /**
- * Start membership purchase
+ * Create PayPal Order
  */
-export async function initiatePurchase(planId) {
+export async function createPaypalOrder(planId) {
   try {
-    const { data } = await api.post("/membership/purchase", {
+    const { data } = await api.post("/paypal/create-order", {
       plan_id: planId,
     });
 
     return data;
   } catch (error) {
-    console.error("Purchase Error:", error);
+    console.error(error);
 
-    if (error.response) {
-      throw new Error(
-        error.response.data?.detail ||
-        error.response.data?.message ||
-        "Purchase failed."
-      );
-    }
-
-    throw new Error("Unable to connect to the server.");
+    throw new Error(
+      error.response?.data?.detail ||
+      "Unable to create PayPal order."
+    );
   }
 }
 
 /**
- * Get user's purchase history
+ * Capture PayPal Payment
  */
-export async function getPurchases() {
+export async function capturePaypalOrder(orderId, paymentId) {
   try {
-    const { data } = await api.get("/membership/purchases");
+    const { data } = await api.post("/paypal/capture-order", {
+      order_id: orderId,
+      payment_id: paymentId,
+    });
 
     return data;
   } catch (error) {
-    console.error("Purchase History Error:", error);
+    console.error(error);
 
-    if (error.response) {
-      throw new Error(
-        error.response.data?.detail ||
-        error.response.data?.message ||
-        "Failed to load purchase history."
-      );
-    }
-
-    throw new Error("Unable to connect to the server.");
+    throw new Error(
+      error.response?.data?.detail ||
+      "Unable to capture PayPal payment."
+    );
   }
+}
+
+/**
+ * Purchase History
+ */
+export async function getPurchases() {
+  const { data } = await api.get("/membership/purchases");
+  return data;
 }

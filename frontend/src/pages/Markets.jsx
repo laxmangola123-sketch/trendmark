@@ -1,6 +1,6 @@
 import React from "react";
-import LiveMarkets from "../components/LiveMarkets";
+import LiveMarket from "../components/LiveMarket";
 
 export default function Markets() {
-    return <LiveMarkets />;
+    return <LiveMarket />;
 }

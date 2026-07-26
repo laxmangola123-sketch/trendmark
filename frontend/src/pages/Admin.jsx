@@ -6,17 +6,15 @@ import PaymentsTable from "../components/admin/PaymentsTable";
 import EmailsTable from "../components/admin/EmailsTable";
 import PlansAdmin from "../components/admin/PlansAdmin";
 import StocksAdmin from "../components/admin/StocksAdmin";
-import KycAdmin from "../components/admin/KycAdmin";
 import ContentAdmin from "../components/admin/ContentAdmin";
 
 const TABS = [
-  { id: "users",    label: "Users" },
+  { id: "users", label: "Users" },
   { id: "payments", label: "Payments" },
-  { id: "kyc",      label: "KYC" },
-  { id: "content",  label: "Content" },
-  { id: "plans",    label: "Plans" },
-  { id: "stocks",   label: "Stocks" },
-  { id: "emails",   label: "Emails" },
+  { id: "content", label: "Content" },
+  { id: "plans", label: "Plans" },
+  { id: "stocks", label: "Stocks" },
+  { id: "emails", label: "Emails" },
 ];
 
 export default function Admin() {
@@ -44,13 +42,12 @@ export default function Admin() {
         ))}
       </div>
 
-      {tab === "users"    && <UsersTable users={users} onChange={reload} />}
+      {tab === "users" && <UsersTable users={users} onChange={reload} />}
       {tab === "payments" && <PaymentsTable payments={payments} onChange={reload} />}
-      {tab === "kyc"      && <KycAdmin items={kyc} onChange={reload} />}
-      {tab === "content"  && <ContentAdmin />}
-      {tab === "plans"    && <PlansAdmin plans={plans} onChange={reload} />}
-      {tab === "stocks"   && <StocksAdmin stocks={stocks} onChange={reload} />}
-      {tab === "emails"   && <EmailsTable emails={emails} />}
+      {tab === "content" && <ContentAdmin />}
+      {tab === "plans" && <PlansAdmin plans={plans} onChange={reload} />}
+      {tab === "stocks" && <StocksAdmin stocks={stocks} onChange={reload} />}
+      {tab === "emails" && <EmailsTable emails={emails} />}
     </main>
   );
 }

@@ -1,9 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { toast } from "sonner";
 import { usePlans } from "../lib/usePlans";
-import { initiatePurchase } from "../lib/purchase";
 import PlanCard from "./PlanCard";
 
 export default function MembershipModal({
@@ -12,28 +10,7 @@ export default function MembershipModal({
   onPurchased,
   allowSkip = true,
 }) {
-  // ✅ Correct use of hook
   const { plans, loading, error } = usePlans();
-
-  const [loadingId, setLoadingId] = useState(null);
-
-  const purchase = async (planId) => {
-    setLoadingId(planId);
-
-    try {
-      const data = await initiatePurchase(planId);
-
-      onPurchased?.(data);
-      onClose?.();
-    } catch (e) {
-      toast.error(
-        e?.response?.data?.detail ||
-        "Could not start payment. Please try again."
-      );
-    } finally {
-      setLoadingId(null);
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -43,7 +20,6 @@ export default function MembershipModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          data-testid="membership-modal"
         >
           <div
             className="absolute inset-0 bg-black/80 backdrop-blur-md"
@@ -75,7 +51,6 @@ export default function MembershipModal({
 
               {allowSkip && (
                 <button
-                  data-testid="membership-close-btn"
                   className="text-white/50 hover:text-white transition-colors p-2"
                   onClick={onClose}
                 >
@@ -101,13 +76,12 @@ export default function MembershipModal({
               {!loading &&
                 !error &&
                 Array.isArray(plans) &&
-                plans.length > 0 &&
-                plans.map((p) => (
+                plans.map((plan) => (
                   <PlanCard
-                    key={p.id}
-                    plan={p}
-                    loading={loadingId === p.id}
-                    onBuy={purchase}
+                    key={plan.id}
+                    plan={plan}
+                    onPurchased={onPurchased}
+                    onClose={onClose}
                   />
                 ))}
 
@@ -119,6 +93,7 @@ export default function MembershipModal({
                     No membership plans available.
                   </div>
                 )}
+
             </div>
 
             {allowSkip && (
@@ -128,7 +103,6 @@ export default function MembershipModal({
                 </div>
 
                 <button
-                  data-testid="skip-membership-btn"
                   onClick={onClose}
                   className="btn-outline px-5 py-2.5 rounded-md text-sm font-semibold"
                 >
