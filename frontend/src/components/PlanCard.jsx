@@ -6,7 +6,6 @@ import {
 } from "../lib/purchase";
 import { toast } from "sonner";
 
-
 export default function PlanCard({
   plan,
   onPurchased,
@@ -15,9 +14,7 @@ export default function PlanCard({
 
   const [paymentId, setPaymentId] = useState(null);
 
-  // $79 plan subscription
   const isSubscriptionPlan = Number(plan.price) === 79;
-
 
   return (
     <div className="card-tactical rounded-xl p-6 border border-white/10">
@@ -26,80 +23,32 @@ export default function PlanCard({
         {plan.name}
       </h3>
 
-
       <p className="text-white/60 text-sm mb-4">
         {plan.description}
       </p>
-
 
       <div className="text-3xl font-bold text-volt mb-4">
         ${plan.price}
       </div>
 
-
       <div className="text-white/60 text-sm mb-6">
         Credits : {plan.credits}
       </div>
 
-
       {isSubscriptionPlan ? (
 
-        // $79 Subscription Plan
-        <PayPalButtons
-
-          style={{
-            shape: "rect",
-            color: "blue",
-            layout: "vertical",
-            label: "subscribe",
+        <button
+          onClick={() => {
+            window.location.href =
+              "https://www.paypal.com/ncp/payment/3E8LMGZC6R7GA";
           }}
-
-
-          createSubscription={(data, actions) => {
-
-            return actions.subscription.create({
-              plan_id: "P-50M746753V0875436NJS52GQ",
-            });
-
-          }}
-
-
-          onApprove={(data) => {
-
-            console.log(
-              "Subscription ID:",
-              data.subscriptionID
-            );
-
-
-            toast.success(
-              "Subscription Activated"
-            );
-
-
-            onPurchased?.();
-
-            onClose?.();
-
-          }}
-
-
-          onError={(err) => {
-
-            console.error(err);
-
-            toast.error(
-              "PayPal Subscription Failed"
-            );
-
-          }}
-
-        />
-
+          className="w-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-semibold py-3 rounded-lg transition"
+        >
+          Choose Plan
+        </button>
 
       ) : (
 
-        // Normal One Time Payment Plans
         <PayPalButtons
 
           style={{
@@ -109,7 +58,6 @@ export default function PlanCard({
             label: "paypal",
           }}
 
-
           createOrder={async () => {
 
             try {
@@ -118,30 +66,21 @@ export default function PlanCard({
                 plan.id || plan._id
               );
 
-
-              setPaymentId(
-                data.payment_id
-              );
-
+              setPaymentId(data.payment_id);
 
               return data.paypal.id;
-
 
             } catch (error) {
 
               console.error(error);
 
-              toast.error(
-                "Unable to create PayPal order"
-              );
+              toast.error("Unable to create PayPal order");
 
               throw error;
 
             }
 
           }}
-
-
 
           onApprove={async (data) => {
 
@@ -152,38 +91,27 @@ export default function PlanCard({
                 paymentId
               );
 
-
-              toast.success(
-                "Membership Activated"
-              );
-
+              toast.success("Membership Activated");
 
               onPurchased?.();
 
               onClose?.();
 
-
             } catch (error) {
 
               console.error(error);
 
-              toast.error(
-                "Payment capture failed"
-              );
+              toast.error("Payment capture failed");
 
             }
 
           }}
 
-
-
           onError={(err) => {
 
             console.error(err);
 
-            toast.error(
-              "PayPal Payment Failed"
-            );
+            toast.error("PayPal Payment Failed");
 
           }}
 
