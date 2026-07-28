@@ -1,24 +1,59 @@
-import React, { useState } from "react";
-import { PayPalButtons } from "@paypal/react-paypal-js";
-import {
-  createPaypalOrder,
-  capturePaypalOrder,
-} from "../lib/purchase";
+import React from "react";
+import api from "../lib/api";
 import { toast } from "sonner";
 
-export default function PlanCard({
-  plan,
-  onPurchased,
-  onClose,
-}) {
+export default function PlanCard({ plan }) {
+  const paymentLinks = {
+    79: "https://www.paypal.com/ncp/payment/3E8LMGZC6R7GA",
+    149: "https://www.paypal.com/ncp/payment/HPAUYB5PRB546",
+    199: "https://www.paypal.com/ncp/payment/B29DGYG2ZDN2Q",
+    299: "https://www.paypal.com/ncp/payment/N82Y9BAPY4G7Q",
+  };
 
-  const [paymentId, setPaymentId] = useState(null);
+  const paymentLink = paymentLinks[Number(plan.price)];
 
-  const isSubscriptionPlan = Number(plan.price) === 79;
+
+  const handleChoosePlan = async () => {
+
+    try {
+
+      const res = await api.post("/membership/purchase", {
+        plan_id: plan.id
+      });
+
+
+      const data = res.data;
+
+
+      if (data.ok) {
+
+        // save payment id for confirmation
+        localStorage.setItem(
+          "payment_id",
+          data.payment_id
+        );
+
+
+        // open paypal payment
+        window.location.href = paymentLink;
+
+      }
+
+
+    } catch (error) {
+
+      console.log(error);
+
+      toast.error(
+        "Unable to start payment"
+      );
+
+    }
+
+  };
 
   return (
     <div className="card-tactical rounded-xl p-6 border border-white/10">
-
       <h3 className="font-heading font-bold text-xl mb-2">
         {plan.name}
       </h3>
@@ -35,90 +70,12 @@ export default function PlanCard({
         Credits : {plan.credits}
       </div>
 
-      {isSubscriptionPlan ? (
-
-        <button
-          onClick={() => {
-            window.location.href =
-              "https://www.paypal.com/ncp/payment/3E8LMGZC6R7GA";
-          }}
-          className="w-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-semibold py-3 rounded-lg transition"
-        >
-          Choose Plan
-        </button>
-
-      ) : (
-
-        <PayPalButtons
-
-          style={{
-            layout: "vertical",
-            color: "gold",
-            shape: "rect",
-            label: "paypal",
-          }}
-
-          createOrder={async () => {
-
-            try {
-
-              const data = await createPaypalOrder(
-                plan.id || plan._id
-              );
-
-              setPaymentId(data.payment_id);
-
-              return data.paypal.id;
-
-            } catch (error) {
-
-              console.error(error);
-
-              toast.error("Unable to create PayPal order");
-
-              throw error;
-
-            }
-
-          }}
-
-          onApprove={async (data) => {
-
-            try {
-
-              await capturePaypalOrder(
-                data.orderID,
-                paymentId
-              );
-
-              toast.success("Membership Activated");
-
-              onPurchased?.();
-
-              onClose?.();
-
-            } catch (error) {
-
-              console.error(error);
-
-              toast.error("Payment capture failed");
-
-            }
-
-          }}
-
-          onError={(err) => {
-
-            console.error(err);
-
-            toast.error("PayPal Payment Failed");
-
-          }}
-
-        />
-
-      )}
-
+      <button
+        onClick={handleChoosePlan}
+        className="w-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-semibold py-3 rounded-lg transition"
+      >
+        Choose Plan
+      </button>
     </div>
   );
 }

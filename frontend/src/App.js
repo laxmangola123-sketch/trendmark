@@ -13,6 +13,7 @@ import Markets from "./pages/Markets";
 import Portfolio from "./pages/Portfolio";
 import Watchlist from "./pages/Watchlist";
 import Admin from "./pages/Admin";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -52,6 +53,7 @@ function App() {
                         <Route path="/portfolio" element={<Portfolio />} />
                         <Route path="/watchlist" element={<Watchlist />} />
                         <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/payment-success" element={<PaymentSuccess />} />
 
                     </Routes>
                 </BrowserRouter>

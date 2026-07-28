@@ -92,12 +92,13 @@ class TestHealth:
     def test_config(self, s):
         r = s.get(f"{API}/config")
         assert r.status_code == 200
+
         data = r.json()
-        assert data["external_payment_url"] == "https://penmarksolutions.net/plan.php"
+
+        assert "support" in data
         assert data["support"]["phone"]
         assert "@" in data["support"]["email"]
         assert data["support"]["address"]
-
 
 # ---------- Plans & Stocks (public) ----------
 
@@ -158,12 +159,20 @@ class TestAuth:
 # ---------- Membership async purchase ----------
 
 class TestPurchaseFlow:
-    def test_purchase_creates_pending_and_returns_external_url(self, s, user_creds, user_headers):
-        r = s.post(f"{API}/membership/purchase", json={"plan_id": "growth"}, headers=user_headers)
+    def test_purchase_creates_pending_and_returns_payment_data(self, s, user_creds, user_headers):
+        r = s.post(
+            f"{API}/membership/purchase",
+            json={"plan_id": "growth"},
+            headers=user_headers
+        )
+
         assert r.status_code == 200, r.text
+
         data = r.json()
-        assert data["external_payment_url"] == "https://penmarksolutions.net/plan.php"
+
         assert data["payment_id"]
+        assert data["plan_id"] == "growth"
+        assert data["amount"]
         # Save for later
         user_creds["last_payment_id"] = data["payment_id"]
 

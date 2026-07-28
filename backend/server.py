@@ -140,7 +140,6 @@ JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGO = os.environ["JWT_ALGO"]
 ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
 ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]
-EXTERNAL_PAYMENT_URL = os.environ["EXTERNAL_PAYMENT_URL"]
 SUPPORT_PHONE = os.environ["SUPPORT_PHONE"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 SUPPORT_ADDRESS = os.environ["SUPPORT_ADDRESS"]
@@ -462,7 +461,6 @@ async def health():
 @app.get("/api/config")
 async def public_config():
     return {
-        "external_payment_url": EXTERNAL_PAYMENT_URL,
         "support": {
             "phone": SUPPORT_PHONE,
             "email": SUPPORT_EMAIL,
@@ -935,7 +933,12 @@ TrendTracker Pro
         "ok": True,
         "message": "Membership Activated"
     }
-# ---------- Membership: create pending payment + external URL ----------
+# Admin payment notification log
+    await db.email_logs.insert_one({
+    "type": "payment_success",
+    "message": f"Payment completed by {user['email']} for {plan['name']}"
+})
+# ---------- Membership: create pending payment ----------
 @app.post("/api/membership/purchase")
 async def purchase(body: PurchaseIn, user=Depends(get_current_user)):
     plan = await _find_plan(body.plan_id)
@@ -970,12 +973,13 @@ async def purchase(body: PurchaseIn, user=Depends(get_current_user)):
     )
     await _send_email(user, subject, body_text, "payment_initiated")
 
-    return {
-        "ok": True,
-        "payment_id": payment["id"],
-        "external_payment_url": EXTERNAL_PAYMENT_URL,
-        "message": "Complete your payment on the secure page. Your membership will be activated once approved.",
-    }
+  return {
+    "ok": True,
+    "payment_id": payment["id"],
+    "plan_id": plan["id"],
+    "amount": plan["price"],
+    "message": "Proceed with PayPal payment.",
+}
 # ---------- Payment Success Callback ----------
 class PaymentSuccessIn(BaseModel):
     payment_id: str
@@ -1080,7 +1084,118 @@ TrendTracker Pro
         "message":"Payment successful. Membership activated."
     }
 
+# ---------- PayPal Webhook ----------
 
+@app.post("/api/paypal/webhook")
+async def paypal_webhook(request: Request):
+
+    data = await request.json()
+
+    event_type = data.get("event_type")
+
+
+    if event_type == "PAYMENT.CAPTURE.COMPLETED":
+
+        resource = data.get("resource", {})
+
+
+        # PayPal custom id se payment find karna hoga
+        payment_id = resource.get("custom_id")
+
+
+        if not payment_id:
+            return {
+                "status": "missing payment id"
+            }
+
+
+        payment = await db.memberships.find_one(
+            {
+                "id": payment_id
+            }
+        )
+
+
+        if not payment:
+            return {
+                "status":"payment not found"
+            }
+
+
+        # Already approved
+        if payment.get("status") == "approved":
+            return {
+                "status":"already activated"
+            }
+
+
+        user = await db.users.find_one(
+            {
+                "id": payment["user_id"]
+            }
+        )
+
+
+        plan = await db.plans.find_one(
+            {
+                "id": payment["plan_id"]
+            }
+        )
+
+
+        if user and plan:
+
+            now = now_utc()
+
+
+            # Activate account
+            await _apply_membership_to_user(
+                user,
+                strip_id(plan),
+                now
+            )
+
+
+            # Update payment
+            await db.memberships.update_one(
+                {
+                    "id": payment_id
+                },
+                {
+                    "$set":{
+                        "status":"approved",
+                        "approved_at":iso(now),
+                        "approved_by":"paypal"
+                    }
+                }
+            )
+
+
+            # Admin notification
+            await db.email_logs.insert_one(
+                {
+                    "type":"paypal_payment",
+                    "message":f"""
+New PayPal Payment Received
+
+User:
+{user.get('email')}
+
+Plan:
+{plan.get('name')}
+
+Amount:
+${plan.get('price')}
+
+Membership Activated Automatically
+"""
+                }
+            )
+
+
+    return {
+        "status":"success"
+    }
 # ---------- Admin: Users ----------
 @app.get("/api/admin/users")
 async def admin_users(user=Depends(require_admin)):
